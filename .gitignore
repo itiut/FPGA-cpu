@@ -7,3 +7,4 @@ incremental_db/
 transcript
 greybox_tmp/
 vsim.wlf
+*.cr.mti
