@@ -1,0 +1,9 @@
+*.summary
+*.rpt
+work/
+db/
+simulation/
+incremental_db/
+transcript
+greybox_tmp/
+vsim.wlf
