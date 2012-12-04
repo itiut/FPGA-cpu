@@ -6,7 +6,7 @@ module register_file(input  [ 2:0] ra1, ra2, wa, // address
                      output [31:0] rf0, rf1, rf2, rf3, rf4, rf5, rf6, rf7);
 
     integer       i;
-    reg [31:0] rf [0:7];     // 32-bit x 8-word register files
+    reg [31:0]    rf [0:7];     // 32-bit x 8-word register files
 
     always @(posedge clk  or negedge n_rst) begin
         if (n_rst == 0)
