@@ -5,7 +5,7 @@ module register(ra1, ra2, wa, rd1, rd2, wd, we, clk, n_rst);
     input         we;           // ライト・イネーブル
     input         clk, n_rst;
     integer       i;
-    reg [31:0] rf [0:7]; // 32-bit x 8-word レジスタ・ファイル本体
+    reg [31:0] rf [0:7];     // 32-bit x 8-word レジスタ・ファイル本体
 
     always @(posedge clk  or negedge n_rst) begin
         if (n_rst == 0)
