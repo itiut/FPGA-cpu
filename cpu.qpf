@@ -1,0 +1,115 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 1991-2011 Altera Corporation
+# Your use of Altera Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Altera Program License 
+# Subscription Agreement, Altera MegaCore Function License 
+# Agreement, or other applicable license agreement, including, 
+# without limitation, that your use is for the sole purpose of 
+# programming logic devices manufactured by Altera and sold by 
+# Altera or its authorized distributors.  Please refer to the 
+# applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus II
+# Version 11.0 Build 208 07/03/2011 Service Pack 1 SJ Web Edition
+# Date created = 11:12:01  December 04, 2012
+#
+# -------------------------------------------------------------------------- #
+
+QUARTUS_VERSION = "11.0"
+DATE = "11:12:01  December 04, 2012"
+
+# Revisions
+
+PROJECT_REVISION = "top_module"
+
+set_location_assignment PIN_28 -to CLK
+set_location_assignment PIN_240 -to N_RST
+
+set_location_assignment PIN_140 -to SEG_OUT[63]
+set_location_assignment PIN_139 -to SEG_OUT[62]
+set_location_assignment PIN_138 -to SEG_OUT[61]
+set_location_assignment PIN_137 -to SEG_OUT[60]
+set_location_assignment PIN_136 -to SEG_OUT[59]
+set_location_assignment PIN_135 -to SEG_OUT[58]
+set_location_assignment PIN_134 -to SEG_OUT[57]
+set_location_assignment PIN_133 -to SEG_OUT[56]
+
+set_location_assignment PIN_132 -to SEG_OUT[55]
+set_location_assignment PIN_131 -to SEG_OUT[54]
+set_location_assignment PIN_128 -to SEG_OUT[53]
+set_location_assignment PIN_127 -to SEG_OUT[52]
+set_location_assignment PIN_126 -to SEG_OUT[51]
+set_location_assignment PIN_125 -to SEG_OUT[50]
+set_location_assignment PIN_124 -to SEG_OUT[49]
+set_location_assignment PIN_123 -to SEG_OUT[48]
+
+set_location_assignment PIN_122 -to SEG_OUT[47]
+set_location_assignment PIN_121 -to SEG_OUT[46]
+set_location_assignment PIN_120 -to SEG_OUT[45]
+set_location_assignment PIN_119 -to SEG_OUT[44]
+set_location_assignment PIN_118 -to SEG_OUT[43]
+set_location_assignment PIN_117 -to SEG_OUT[42]
+set_location_assignment PIN_116 -to SEG_OUT[41]
+set_location_assignment PIN_115 -to SEG_OUT[40]
+
+set_location_assignment PIN_114 -to SEG_OUT[39]
+set_location_assignment PIN_113 -to SEG_OUT[38]
+set_location_assignment PIN_108 -to SEG_OUT[37]
+set_location_assignment PIN_107 -to SEG_OUT[36]
+set_location_assignment PIN_106 -to SEG_OUT[35]
+set_location_assignment PIN_105 -to SEG_OUT[34]
+set_location_assignment PIN_104 -to SEG_OUT[33]
+set_location_assignment PIN_101 -to SEG_OUT[32]
+
+set_location_assignment PIN_100 -to SEG_OUT[31]
+set_location_assignment PIN_99 -to SEG_OUT[30]
+set_location_assignment PIN_98 -to SEG_OUT[29]
+set_location_assignment PIN_95 -to SEG_OUT[28]
+set_location_assignment PIN_94 -to SEG_OUT[27]
+set_location_assignment PIN_93 -to SEG_OUT[26]
+set_location_assignment PIN_88 -to SEG_OUT[25]
+set_location_assignment PIN_87 -to SEG_OUT[24]
+
+set_location_assignment PIN_86 -to SEG_OUT[23]
+set_location_assignment PIN_85 -to SEG_OUT[22]
+set_location_assignment PIN_84 -to SEG_OUT[21]
+set_location_assignment PIN_83 -to SEG_OUT[20]
+set_location_assignment PIN_82 -to SEG_OUT[19]
+set_location_assignment PIN_79 -to SEG_OUT[18]
+set_location_assignment PIN_78 -to SEG_OUT[17]
+set_location_assignment PIN_77 -to SEG_OUT[16]
+
+set_location_assignment PIN_76 -to SEG_OUT[15]
+set_location_assignment PIN_75 -to SEG_OUT[14]
+set_location_assignment PIN_74 -to SEG_OUT[13]
+set_location_assignment PIN_73 -to SEG_OUT[12]
+set_location_assignment PIN_68 -to SEG_OUT[11]
+set_location_assignment PIN_67 -to SEG_OUT[10]
+set_location_assignment PIN_66 -to SEG_OUT[9]
+set_location_assignment PIN_65 -to SEG_OUT[8]
+
+set_location_assignment PIN_64 -to SEG_OUT[7]
+set_location_assignment PIN_63 -to SEG_OUT[6]
+set_location_assignment PIN_62 -to SEG_OUT[5]
+set_location_assignment PIN_61 -to SEG_OUT[4]
+set_location_assignment PIN_60 -to SEG_OUT[3]
+set_location_assignment PIN_59 -to SEG_OUT[2]
+set_location_assignment PIN_58 -to SEG_OUT[1]
+set_location_assignment PIN_57 -to SEG_OUT[0]
+
+set_location_assignment PIN_56 -to SEG_SEL[7]
+set_location_assignment PIN_55 -to SEG_SEL[6]
+set_location_assignment PIN_54 -to SEG_SEL[5]
+set_location_assignment PIN_53 -to SEG_SEL[4]
+set_location_assignment PIN_50 -to SEG_SEL[3]
+set_location_assignment PIN_49 -to SEG_SEL[2]
+set_location_assignment PIN_48 -to SEG_SEL[1]
+set_location_assignment PIN_47 -to SEG_SEL[0]
+

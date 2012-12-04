@@ -1,11 +1,17 @@
 module test_register_file;
     reg         rst, clk, we;
     reg  [ 2:0] ra1, ra2, wa;
-    wire [31:0] rd1, rd2;
+    wire [31:0] rd1, rd2,
+                r_reg [0:7];
     reg  [31:0] wd;
     integer      i;
 
-    register_file register(ra1, ra2, wa, rd1, rd2, wd, we, clk, rst);
+    register_file register(ra1, ra2, wa,
+                           rd1, rd2,
+                           wd,
+                           we,
+                           clk, rst,
+                           r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
 
     initial begin
         clk = 0;
