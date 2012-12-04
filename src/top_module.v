@@ -1,21 +1,111 @@
-module top_module(input         CLK,
-                  input         N_RST,
-                  output [63:0] SEG_OUT,
-                  output [ 7:0] SEG_SEL);
+`define PH_F 5'b00001
+`define PH_R 5'b00010
+`define PH_X 5'b00100
+`define PH_M 5'b01000
+`define PH_W 5'b10000
+
+module top_module(input             CLK,
+                  input             N_RST,
+                  output [63:0]     SEG_OUT,
+                  output [ 7:0]     SEG_SEL,
+                  output reg [31:0] dr);
 
     reg  [ 7:0]                 r_controller;
-    wire [31:0]                 r_reg [0:7];
 
     // for register_file
-    wire [ 2:0]                 ra1, ra2, wa;
-    wire [31:0]                 rd1, rd2, wd;
-    wire                        we;
+    wire [ 2:0]                 ra1, ra2, wa; // address
+    wire [31:0]                 rd1, rd2, wd; // read/write data
+    wire                        we;           // write enable
+    wire [31:0]                 r_reg [0:7];
 
-    assign SEG_OUT = seg_out_select(r_controller);
-    assign SEG_SEL = r_controller;
+    // for adder
+    wire [31:0]                 adder_in1, adder_in2, adder_out;
+
+    // for phase_gen
+    reg                         hlt;
+    wire [4:0]                  phase;
+
+    // registers
+    reg  [31:0]                 ir, tr, sr;
+
+
+
+    /* ------------------------------------------------------ */
+    // register_file
+    assign wd = dr;
+    assign we = set_rf_we(phase);
+
+    register_file register_file(3'd0,  // ra1
+                                3'd1,  // ra2
+                                3'd0,  // wa
+                                rd1,
+                                rd2,
+                                wd,
+                                we,
+                                CLK,
+                                N_RST,
+                                r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
+
+
+    /* ------------------------------------------------------ */
+    // adder
+    assign adder_in1 = tr;
+    assign adder_in2 = sr;
+
+    adder adder(adder_in1, adder_in2, adder_out);
+
+
+    /* ------------------------------------------------------ */
+    // phase_gen
+    phase_gen phase_gen(hlt, phase, CLK, N_RST);
+
+
+    /* ------------------------------------------------------ */
+    // main
+    always @(posedge CLK or negedge N_RST) begin
+        if (~N_RST) begin
+            ir <= 0; tr <= 0; sr <= 0; dr <= 0;
+        end else begin
+            case (phase)
+                `PH_F: begin
+                end
+                `PH_R: begin
+                end
+                `PH_X: begin
+                    tr <= rd1;
+                    sr <= 1;
+                end
+                `PH_M: begin
+                    dr <= adder_out;
+                end
+                `PH_W: begin
+                end
+            endcase
+        end
+    end
+
+
+    /* ------------------------------------------------------ */
+    // register_file setter
+    function set_rf_we;
+        input [2:0] phase;
+        begin
+            case (phase)
+                `PH_F: set_rf_we = 1'b0;
+                `PH_R: set_rf_we = 1'b0;
+                `PH_X: set_rf_we = 1'b0;
+                `PH_M: set_rf_we = 1'b0;
+                `PH_W: set_rf_we = 1'b1;
+            endcase
+        end
+    endfunction
+
 
     /* ------------------------------------------------------ */
     // seg_controller
+    assign SEG_OUT = seg_out_select(r_controller);
+    assign SEG_SEL = r_controller;
+
     always @(posedge CLK or negedge N_RST) begin
         if(~N_RST) begin
             r_controller <= 8'b0000_0000;
@@ -25,6 +115,8 @@ module top_module(input         CLK,
             r_controller <= {r_controller[6:0] , r_controller[7]};
         end
     end
+
+
     /* ------------------------------------------------------ */
     // seg_out_selector
     function [63:0] seg_out_select;
@@ -41,18 +133,8 @@ module top_module(input         CLK,
             default:      seg_out_select = 64'd0;
         endcase
     endfunction
-    /* ------------------------------------------------------ */
-    // register
-    register_file register(3'd0,  // ra1
-                           3'd0,  // ra2
-                           3'd0,  // wa
-                           rd1,
-                           rd2,
-                           32'd0, // wd
-                           1'd0,  // we
-                           CLK,
-                           N_RST,
-                           r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
+
+
     /* ------------------------------------------------------ */
     // seg_decoder
     function [7:0] seg_decoder_4;
@@ -76,6 +158,7 @@ module top_module(input         CLK,
             4'hf : seg_decoder_4 = 8'b1000_1110;
         endcase
     endfunction
+
     function [63:0] seg_decoder_32;
         input [31:0] value;
         seg_decoder_32 = {seg_decoder_4(value[31:28]),
