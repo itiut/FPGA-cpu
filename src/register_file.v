@@ -28,4 +28,4 @@ module register_file(input  [ 2:0] ra1, ra2, wa, // address
     assign rf6 = rf[6];
     assign rf7 = rf[7];
 
-endmodule // register
+endmodule
