@@ -1,4 +1,4 @@
-module register(ra1, ra2, wa, rd1, rd2, wd, we, clk, n_rst);
+module register_file(ra1, ra2, wa, rd1, rd2, wd, we, clk, n_rst);
     input  [ 2:0] ra1, ra2, wa; // アドレス (番号)
     output [31:0] rd1, rd2;     // 読み出しデータ
     input  [31:0] wd;           // 書き込みデータ
