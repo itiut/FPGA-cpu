@@ -4,11 +4,10 @@
 `define PH_M 5'b01000
 `define PH_W 5'b10000
 
-module top_module(input             CLK,
-                  input             N_RST,
-                  output [63:0]     SEG_OUT,
-                  output [ 7:0]     SEG_SEL,
-                  output reg [31:0] dr);
+module top_module(input         CLK,
+                  input         N_RST,
+                  output [63:0] SEG_OUT,
+                  output [ 7:0] SEG_SEL);
 
     reg  [ 7:0]                 r_controller;
 
@@ -26,7 +25,7 @@ module top_module(input             CLK,
     wire [4:0]                  phase;
 
     // registers
-    reg  [31:0]                 ir, tr, sr;
+    reg  [31:0]                 ir, tr, sr, dr;
 
 
 
@@ -88,14 +87,11 @@ module top_module(input             CLK,
     /* ------------------------------------------------------ */
     // register_file setter
     function set_rf_we;
-        input [2:0] phase;
+        input [4:0] phase;
         begin
             case (phase)
-                `PH_F: set_rf_we = 1'b0;
-                `PH_R: set_rf_we = 1'b0;
-                `PH_X: set_rf_we = 1'b0;
-                `PH_M: set_rf_we = 1'b0;
-                `PH_W: set_rf_we = 1'b1;
+                `PH_W:   set_rf_we = 1'b1;
+                default: set_rf_we = 1'b0;
             endcase
         end
     endfunction
