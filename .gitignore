@@ -8,3 +8,7 @@ transcript
 greybox_tmp/
 vsim.wlf
 *.cr.mti
+*.done
+*.pof
+*.sof
+
