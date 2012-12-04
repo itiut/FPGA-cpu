@@ -1,5 +1,5 @@
 module test_register_file;
-    reg         rst, clk, we;
+    reg         clk, n_rst, we;
     reg  [ 2:0] ra1, ra2, wa;
     wire [31:0] rd1, rd2,
                 r_reg [0:7];
@@ -10,7 +10,7 @@ module test_register_file;
                            rd1, rd2,
                            wd,
                            we,
-                           clk, rst,
+                           clk, n_rst,
                            r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
 
     initial begin
@@ -21,9 +21,9 @@ module test_register_file;
     end
 
     initial begin
-        rst = 1;
-        #10 rst = 0;
-        #10 rst = 1;
+        n_rst = 1;
+        #10 n_rst = 0;
+        #10 n_rst = 1;
         #10 we = 1; ra1 = 1; ra2 = 2; wa = 3; wd = 32'haaaaaaaa;
         #100 ra1 = 3; ra2 = 3; wa = 4; wd = 32'h55555555;
         #100 ra1 = 4; ra2 = 5; wa = 5; wd = 32'h12345678;

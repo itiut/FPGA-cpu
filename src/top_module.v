@@ -1,11 +1,15 @@
-module top_module(input              CLK,
-                  input              N_RST,
-                  output wire [63:0] SEG_OUT,
-                  output wire [7:0]  SEG_SEL);
+module top_module(input         CLK,
+                  input         N_RST,
+                  output [63:0] SEG_OUT,
+                  output [ 7:0] SEG_SEL);
 
-    reg [7:0]                         r_controller;
-    wire [31:0]                       r_reg [0:7];
-    wire [31:0]                       rd1, rd2;
+    reg  [ 7:0]                 r_controller;
+    wire [31:0]                 r_reg [0:7];
+
+    // for register_file
+    wire [ 2:0]                 ra1, ra2, wa;
+    wire [31:0]                 rd1, rd2, wd;
+    wire                        we;
 
     assign SEG_OUT = seg_out_select(r_controller);
     assign SEG_SEL = r_controller;
@@ -26,15 +30,15 @@ module top_module(input              CLK,
     function [63:0] seg_out_select;
         input [7:0] controller;
         case(controller)
-            8'b0000_0001 : seg_out_select = seg_decoder_32(r_reg[0]);
-            8'b0000_0010 : seg_out_select = seg_decoder_32(r_reg[1]);
-            8'b0000_0100 : seg_out_select = seg_decoder_32(r_reg[2]);
-            8'b0000_1000 : seg_out_select = seg_decoder_32(r_reg[3]);
-            8'b0001_0000 : seg_out_select = seg_decoder_32(r_reg[4]);
-            8'b0010_0000 : seg_out_select = seg_decoder_32(r_reg[5]);
-            8'b0100_0000 : seg_out_select = seg_decoder_32(r_reg[6]);
-            8'b1000_0000 : seg_out_select = seg_decoder_32(r_reg[7]);
-            default      : seg_out_select = 64'd0;
+            8'b0000_0001: seg_out_select = seg_decoder_32(r_reg[0]);
+            8'b0000_0010: seg_out_select = seg_decoder_32(r_reg[1]);
+            8'b0000_0100: seg_out_select = seg_decoder_32(r_reg[2]);
+            8'b0000_1000: seg_out_select = seg_decoder_32(r_reg[3]);
+            8'b0001_0000: seg_out_select = seg_decoder_32(r_reg[4]);
+            8'b0010_0000: seg_out_select = seg_decoder_32(r_reg[5]);
+            8'b0100_0000: seg_out_select = seg_decoder_32(r_reg[6]);
+            8'b1000_0000: seg_out_select = seg_decoder_32(r_reg[7]);
+            default:      seg_out_select = 64'd0;
         endcase
     endfunction
     /* ------------------------------------------------------ */
