@@ -14,6 +14,6 @@ module test_top_module;
         #10 clk = ~clk;
     end
 
-    top_module ttop_module(clk, n_rst, seg_out, seg_sel);
+    top_module top_module(clk, n_rst, seg_out, seg_sel);
 
 endmodule

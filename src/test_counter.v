@@ -1,10 +1,9 @@
 module test_counter;
-
     reg rst, clk;
     wire [2:0] c;
     integer i;
 
-    counter tcounter(rst, clk, c);
+    counter counter(rst, clk, c);
 
     initial begin
         clk = 0;
@@ -17,8 +16,5 @@ module test_counter;
         #10 rst = 0;
         #20 rst = 1;
     end
-
-    initial
-      $monitor($stime, rst, clk, c);
 
 endmodule

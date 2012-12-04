@@ -1,3 +1,6 @@
+`include "header.v"
+
+// phase bit
 `define PH_F 5'b00001
 `define PH_R 5'b00010
 `define PH_X 5'b00100
@@ -26,7 +29,6 @@ module top_module(input         CLK,
 
     // registers
     reg  [31:0]                 ir, tr, sr, dr;
-
 
 
     /* ------------------------------------------------------ */
@@ -63,7 +65,7 @@ module top_module(input         CLK,
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir <= 0; tr <= 0; sr <= 0; dr <= 0;
+            ir <= `zADD; tr <= 0; sr <= 0; dr <= 0;
         end else begin
             case (phase)
                 `PH_F: begin

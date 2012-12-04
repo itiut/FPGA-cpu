@@ -4,7 +4,7 @@ module test_register_file;
     wire [31:0] rd1, rd2,
                 r_reg [0:7];
     reg  [31:0] wd;
-    integer      i;
+    integer     i;
 
     register_file register(ra1, ra2, wa,
                            rd1, rd2,
