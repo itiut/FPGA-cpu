@@ -92,7 +92,7 @@ module top_module(input         CLK,
                     sr <= 1;
                 end
                 `PH_M: begin
-                    dr <= adder_out;
+                    dr <= alu_dr;
                 end
                 `PH_W: begin
                 end
@@ -107,8 +107,8 @@ module top_module(input         CLK,
         input [4:0] phase;
         begin
             case (phase)
-                `PH_W:   set_rf_we = 1'b1;
-                default: set_rf_we = 1'b0;
+                `PH_W:   gen_we = 1'b1;
+                default: gen_we = 1'b0;
             endcase
         end
     endfunction
