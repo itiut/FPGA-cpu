@@ -16,7 +16,7 @@
 `define zADD  16'b_0000_000x_11_xxxxxx // w  : rg1 rg2
 `define zSUB  16'b_0010_100x_11_xxxxxx // w  : rg1 rg2
 `define zCMP  16'b_0011_100x_11_xxxxxx // w  : rg1 rg2
-`deifne zAND  16'b_0010_000x_11_xxxxxx // w  : rg1 rg2
+`define zAND  16'b_0010_000x_11_xxxxxx // w  : rg1 rg2
 `define zOR   16'b_0000_100x_11_xxxxxx // w  : rg1 rg2
 `define zXOR  16'b_0011_000x_11_xxxxxx // w  : rg1 rg2
 `define zADDI 16'b_1000_00xx_11_000xxx // sw :     rg2 : sim8

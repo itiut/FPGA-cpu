@@ -21,20 +21,26 @@ module top_module(input         CLK,
     wire [31:0]                 r_reg [0:7];
 
     // for adder
-    wire [31:0]                 adder_in1, adder_in2, adder_out;
+    // wire [31:0]                 adder_in1, adder_in2, adder_out;
+
+    // for alu
+    wire [31:0]                 alu_ir, alu_sr, alu_tr, alu_dr;
 
     // for phase_gen
     reg                         hlt;
     wire [4:0]                  phase;
 
     // registers
-    reg  [31:0]                 ir, tr, sr, dr;
+    reg  [31:0]                 ir; // instruction
+    reg  [31:0]                 sr; // source (rg1)
+    reg  [31:0]                 tr; // target (rg2)
+    reg  [31:0]                 dr; // data
 
 
     /* ------------------------------------------------------ */
     // register_file
     assign wd = dr;
-    assign we = set_rf_we(phase);
+    assign we = gen_we(phase);
 
     register_file register_file(3'd0,  // ra1
                                 3'd1,  // ra2
@@ -50,10 +56,19 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // adder
-    assign adder_in1 = tr;
-    assign adder_in2 = sr;
+    // assign adder_in1 = sr;
+    // assign adder_in2 = tr;
 
-    adder adder(adder_in1, adder_in2, adder_out);
+    // adder adder(adder_in1, adder_in2, adder_out);
+
+
+    /* ------------------------------------------------------ */
+    // alu
+    assign alu_ir = ir;
+    assign alu_sr = sr;
+    assign alu_tr = tr;
+
+    alu alu(alu_ir, alu_sr, alu_tr, alu_dr);
 
 
     /* ------------------------------------------------------ */
@@ -65,7 +80,7 @@ module top_module(input         CLK,
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir <= `zADD; tr <= 0; sr <= 0; dr <= 0;
+            ir <= {`zADD, `zNOP}; sr <= 0; tr <= 0; dr <= 0;
         end else begin
             case (phase)
                 `PH_F: begin
@@ -87,8 +102,8 @@ module top_module(input         CLK,
 
 
     /* ------------------------------------------------------ */
-    // register_file setter
-    function set_rf_we;
+    // register_file argument generator
+    function gen_we;
         input [4:0] phase;
         begin
             case (phase)
