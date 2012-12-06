@@ -34,7 +34,7 @@ module alu(input  [31:0] ir,
                 `zSLL  : exec = tr << ir[15:8];
                 `zSLA  : exec = tr << ir[15:8];
                 `zSRL  : exec = tr >> ir[15:8];
-                `zSRA  : exec = tr >>> ir[15:8];
+                `zSRA  : exec = {{32{tr[31]}}, tr} >> ir[15:8];
                 `zB    : ;
                 `zBcc  : ;
                 `zJALR : ;
