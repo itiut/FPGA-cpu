@@ -1,8 +1,6 @@
 # modelsim project liblary directory
 work/
 
-# コンパイル毎に修正されるから一旦除外
-*.mpf
 
 # from github/gitignore
 # ignore Quartus II generated files
