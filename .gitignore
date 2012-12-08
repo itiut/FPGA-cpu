@@ -1,3 +1,5 @@
+*.o
+
 # modelsim project liblary directory
 work/
 
