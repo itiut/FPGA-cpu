@@ -1,7 +1,10 @@
 	.include "ia-32z.s"
 	.text
 .globl _f
-	.def	_f;	.scl	2;	.type	32;	.endef
+#	.def	_f;
+#	.scl	2;
+#	.type	32;
+#	.endef
 _f:
 	zLD	4, ax, ax
 #	zLD	128, ax, ax
