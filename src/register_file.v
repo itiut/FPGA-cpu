@@ -9,10 +9,10 @@ module register_file(input  [ 2:0] ra1, ra2, wa, // address
     reg [31:0]    rf [0:7];     // 32-bit x 8-word register files
 
     always @(posedge clk  or negedge n_rst) begin
-        if (n_rst == 0)
+        if (~n_rst)
           for (i = 0; i < 8; i = i + 1)
             rf[i] <= 0;
-        else if (we == 1)
+        else if (we)
           rf[wa] <= wd;         // write
     end
 
