@@ -28,19 +28,26 @@ module top_module(input         CLK,
 
     // for phase_gen
     reg                         hlt;
-    wire [4:0]                  phase;
+    wire [ 4:0]                 phase;
+
+    // for mem (read/write 2 ports)
+    wire [ 9:0]                 mem_a1, mem_a2;   // read/write address
+    wire [31:0]                 mem_rd1, mem_rd2; // read data
+    wire [31:0]                 mem_wd1, mem_wd2; // write data
+    wire                        mem_we1, mem_we2; // write enable
 
     // registers
-    reg  [31:0]                 ir; // instruction
-    reg  [31:0]                 sr; // source (rg1)
-    reg  [31:0]                 tr; // target (rg2)
-    reg  [31:0]                 dr; // data
+    reg  [31:0]                 ir;  // instruction
+    reg  [31:0]                 sr;  // source (rg1)
+    reg  [31:0]                 tr;  // target (rg2)
+    reg  [31:0]                 dr;  // data
+    reg  [31:0]                 mdr; // memory data
 
 
     /* ------------------------------------------------------ */
     // register_file
-    assign wd = dr;
-    assign we = gen_we(phase);
+    assign wd = gen_rf_wd(ir[31:16], dr, mdr);
+    assign we = gen_rf_we(phase);
 
     register_file register_file(3'd0,  // ra1
                                 3'd1,  // ra2
@@ -77,22 +84,41 @@ module top_module(input         CLK,
 
 
     /* ------------------------------------------------------ */
+    // mem
+    // port1: fetch instructions
+    assign mem_a1 = 10'b0;
+    assign mem_wd1 = 0;
+    assign mem_we1 = 0;
+
+    // port2: load/store data
+    assign mem_a2 = dr;
+    assign mem_wd2 = sr;
+    assign mem_we2 = gen_mem_we2(ir[31:16], phase);
+
+    mem mem(mem_a1, mem_a2, CLK, mem_wd1, mem_wd2, mem_we1, mem_we2, mem_rd1, mem_rd2);
+
+
+    /* ------------------------------------------------------ */
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir <= {`zADD, `zNOP}; sr <= 0; tr <= 0; dr <= 0;
+            // ir <= {`zST, `zNOP};
+            ir <= {`zST, 16'b_0000_1000_1001_0000};
+            sr <= 0; tr <= 0; dr <= 0; mdr <= 0;
         end else begin
             case (phase)
                 `PH_F: begin
                 end
                 `PH_R: begin
+//                    tr <= rd1;
+                    tr <= 40;
+                    sr <= sr + 1;
                 end
                 `PH_X: begin
-                    tr <= rd1;
-                    sr <= 1;
+                    dr <= alu_dr;
                 end
                 `PH_M: begin
-                    dr <= alu_dr;
+                    mdr <= mem_rd2;
                 end
                 `PH_W: begin
                 end
@@ -103,13 +129,44 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // register_file argument generator
-    function gen_we;
+    function gen_rf_wd;
+        input [15:0] inst;
+        input [31:0] d;
+        input [31:0] md;
+        begin
+            casex (inst)
+                `zLD:    gen_rf_wd = md;
+                default: gen_rf_wd = d;
+            endcase
+        end
+    endfunction
+
+    function gen_rf_we;
         input [4:0] phase;
         begin
-            case (phase)
-                `PH_W:   gen_we = 1'b1;
-                default: gen_we = 1'b0;
-            endcase
+            if (phase == `PH_W) begin
+                gen_rf_we = 1'b1;
+            end else begin
+                gen_rf_we = 1'b0;
+            end
+        end
+    endfunction
+
+
+    /* ------------------------------------------------------ */
+    // register_file argument generator
+    function gen_mem_we2;
+        input [15:0] inst;
+        input [ 4:0] phase;
+        begin
+            if (phase == `PH_M) begin
+                casex (inst)
+                    `zST:    gen_mem_we2 = 1'b1;
+                    default: gen_mem_we2 = 1'b0;
+                endcase
+            end else begin
+                gen_mem_we2 = 1'b0;
+            end
         end
     endfunction
 
