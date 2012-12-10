@@ -40,3 +40,10 @@
 `define zPOP  16'b_0101_1xxx_1001_0000 // rg2
 `define zNOP  16'b_1001_0000_1001_0000
 `define zHLT  16'b_1111_0100_1001_0000
+
+// phase bit
+`define PH_F 5'b00001
+`define PH_R 5'b00010
+`define PH_X 5'b00100
+`define PH_M 5'b01000
+`define PH_W 5'b10000

@@ -1,12 +1,5 @@
 `include "header.v"
 
-// phase bit
-`define PH_F 5'b00001
-`define PH_R 5'b00010
-`define PH_X 5'b00100
-`define PH_M 5'b01000
-`define PH_W 5'b10000
-
 module top_module(input         CLK,
                   input         N_RST,
                   output [63:0] SEG_OUT,
