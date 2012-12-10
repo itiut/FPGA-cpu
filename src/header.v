@@ -47,3 +47,6 @@
 `define PH_X 5'b00100
 `define PH_M 5'b01000
 `define PH_W 5'b10000
+
+// memory address MSB
+`define MEM_A_MSB 9

@@ -25,7 +25,7 @@ module top_module(input         CLK,
     wire [ 4:0]                 phase;
 
     // for mem (read/write 2 ports)
-    wire [ 9:0]                 mem_a1, mem_a2;   // read/write address
+    wire [`MEM_A_MSB:0]         mem_a1, mem_a2;   // read/write address
     wire [31:0]                 mem_rd1, mem_rd2; // read data
     wire [31:0]                 mem_wd1, mem_wd2; // write data
     wire                        mem_we1, mem_we2; // write enable
@@ -80,7 +80,7 @@ module top_module(input         CLK,
     /* ------------------------------------------------------ */
     // mem
     // port1: fetch instructions
-    assign mem_a1 = pc;
+    assign mem_a1 = pc[`MEM_A_MSB+2:2];
     assign mem_wd1 = 32'b0;
     assign mem_we1 = 1'b0;
 
