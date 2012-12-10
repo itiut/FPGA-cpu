@@ -8,6 +8,7 @@ module top_module(input         CLK,
     reg  [ 7:0]                 r_controller;
 
     // for register_file
+    wire [ 5:0]                 ra_;
     wire [ 2:0]                 ra1, ra2, wa; // address
     wire [31:0]                 rd1, rd2, wd; // read/write data
     wire                        we;           // write enable
@@ -29,6 +30,9 @@ module top_module(input         CLK,
     wire [31:0]                 mem_wd1, mem_wd2; // write data
     wire                        mem_we1, mem_we2; // write enable
 
+    // for program_counter
+    wire [31:0]                 pc;
+
     // registers
     reg  [31:0]                 ir;  // instruction
     reg  [31:0]                 sr;  // source (rg1)
@@ -39,18 +43,15 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // register_file
+    assign ra_ = gen_rf_ra(ir[31:16]); // {rg1, rg2}
+    assign ra1 = ra_[5:3];             // rg1
+    assign ra2 = ra_[2:0];             // rg2
     assign wd = gen_rf_wd(ir[31:16], dr, mdr);
     assign we = gen_rf_we(phase);
 
-    register_file register_file(3'd0,  // ra1
-                                3'd1,  // ra2
+    register_file register_file(ra1, ra2,
                                 3'd0,  // wa
-                                rd1,
-                                rd2,
-                                wd,
-                                we,
-                                CLK,
-                                N_RST,
+                                rd1, rd2, wd, we, CLK, N_RST,
                                 r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
 
 
@@ -79,9 +80,9 @@ module top_module(input         CLK,
     /* ------------------------------------------------------ */
     // mem
     // port1: fetch instructions
-    assign mem_a1 = 10'b0;
-    assign mem_wd1 = 0;
-    assign mem_we1 = 0;
+    assign mem_a1 = pc;
+    assign mem_wd1 = 32'b0;
+    assign mem_we1 = 1'b0;
 
     // port2: load/store data
     assign mem_a2 = dr;
@@ -92,20 +93,23 @@ module top_module(input         CLK,
 
 
     /* ------------------------------------------------------ */
+    // program_counter
+    program_counter program_counter(phase, 1'b0, dr, pc, CLK, N_RST, 1'b0);
+
+
+    /* ------------------------------------------------------ */
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            // ir <= {`zST, `zNOP};
-            ir <= {`zST, 16'b_0000_1000_1001_0000};
-            sr <= 0; tr <= 0; dr <= 0; mdr <= 0;
+            ir <= {`zNOP, `zNOP}; sr <= 0; tr <= 0; dr <= 0; mdr <= 0;
         end else begin
             case (phase)
                 `PH_F: begin
+                    ir <= mem_rd1;
                 end
                 `PH_R: begin
-//                    tr <= rd1;
-                    tr <= 40;
-                    sr <= sr + 1;
+                    sr <= rd1;
+                    tr <= rd2;
                 end
                 `PH_X: begin
                     dr <= alu_dr;
@@ -122,7 +126,18 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // register_file argument generator
-    function gen_rf_wd;
+    function [5:0] gen_rf_ra;
+        input [15:0] inst;
+        begin
+            casex (inst)
+                `zPUSH:  gen_rf_ra = inst[13:8];
+                `zPOP:   gen_rf_ra = inst[13:8];
+                default: gen_rf_ra = inst[ 5:0];
+            endcase
+        end
+    endfunction
+
+    function [31:0] gen_rf_wd;
         input [15:0] inst;
         input [31:0] d;
         input [31:0] md;
@@ -147,7 +162,7 @@ module top_module(input         CLK,
 
 
     /* ------------------------------------------------------ */
-    // register_file argument generator
+    // mem argument generator
     function gen_mem_we2;
         input [15:0] inst;
         input [ 4:0] phase;
