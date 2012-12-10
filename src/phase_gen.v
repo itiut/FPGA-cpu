@@ -10,9 +10,9 @@ module phase_gen(input            hlt,
     end
 
     always @(posedge clk or negedge n_rst) begin
-        if (n_rst == 0)         // 非同期リセット
+        if (~n_rst)             // 非同期リセット
           phase <= 0;
-        else if (hlt == 1)      // zHLT 命令による同期リセット
+        else if (hlt)           // zHLT 命令による同期リセット
           phase <= 0;
         else if (n_rst_d[2:1] == 2'b01) // カウント開始
           phase <= 1;
