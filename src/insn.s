@@ -30,6 +30,7 @@ _f:
 	zXORI	4, ax
 
 	zNOT	ax
+	zNEG	ax
 
 	zSLL	4, ax
 	zSLA	4, ax
