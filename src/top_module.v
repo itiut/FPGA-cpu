@@ -91,7 +91,7 @@ module top_module(input         CLK,
     assign mem_we1 = 1'b0;
 
     // port2: load/store data
-    assign mem_a2 = dr;
+    assign mem_a2 = gen_mem_a2(ir[31:16], alu_dr);
     assign mem_wd2 = sr;
     assign mem_we2 = gen_mem_we2(ir[31:16], phase);
 
@@ -211,6 +211,18 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // mem argument generator
+    function [`MEM_A_MSB:0] gen_mem_a2;
+        input [31:0] inst;
+        input [31:0] alu_out;
+        begin
+            casex (inst)
+                `zLD   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                `zST   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                default: gen_mem_a2 = 0;
+            endcase
+        end
+    endfunction
+
     function gen_mem_we2;
         input [15:0] inst;
         input [ 4:0] phase;

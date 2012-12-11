@@ -79,9 +79,9 @@ module alu(input  [31:0] ir,
                 `zADDI : gen_cfvf = {c, c};
                 `zSUBI : gen_cfvf = ~{c, c};
                 `zCMPI : gen_cfvf = ~{c, c};
-                `zNEG  : gen_cfvf = (rg2 == 0) ? 2'b0 : 2'b1;
-                `zSLL  : gen_cfvf = (rg2[31] == rg2[30]) ? {c, 1'b1} : {c, 1'b0};
-                `zSLA  : gen_cfvf = (rg2[31] == rg2[30]) ? {c, 1'b1} : {c, 1'b0};
+                `zNEG  : gen_cfvf = (rg2 == 0) ? 2'b0 : 2'b11;
+                `zSLL  : gen_cfvf = (ir[12:8] == 1 && rg2[31] == rg2[30]) ? {c, 1'b1} : {c, 1'b0};
+                `zSLA  : gen_cfvf = (ir[12:8] == 1 && rg2[31] == rg2[30]) ? {c, 1'b1} : {c, 1'b0};
                 `zSRL  : gen_cfvf = (ir[12:8] == 0) ? 2'b0 :
                                     (ir[12:8] == 1) ? {rg2[ir[12:8] - 1], rg2[31]} : {rg2[ir[12:8] - 1], 1'b0};
                 `zSRA  : gen_cfvf = (ir[12:8] == 0) ? 2'b0 : {rg2[ir[12:8] - 1], 1'b0};
