@@ -118,7 +118,7 @@ module top_module(input         CLK,
                     ir <= mem_rd1;
                 end
                 `PH_R: begin
-                    sr <= gen_sr(ir[31:16], rd1, rd2);
+                    sr <= gen_sr(ir[31:16], rd1, rd2, pc);
                     tr <= gen_tr(ir[31:16], rd2, pc, rdsp);
                 end
                 `PH_X: begin
@@ -205,6 +205,8 @@ module top_module(input         CLK,
         input [31:0] d;
         begin
             casex (inst)
+                `zJALR : gen_rf_wdsp = d;
+                `zRET  : gen_rf_wdsp = d;
                 `zPUSH : gen_rf_wdsp = d;
                 `zPOP  : gen_rf_wdsp = d;
                 default: gen_rf_wdsp = 32'b0;
@@ -218,6 +220,8 @@ module top_module(input         CLK,
         begin
             if (phase == `PH_W) begin
                 casex (inst)
+                    `zJALR : gen_rf_wesp = 1'b1;
+                    `zRET  : gen_rf_wesp = 1'b1;
                     `zPUSH : gen_rf_wesp = 1'b1;
                     `zPOP  : gen_rf_wesp = 1'b1;
                     default: gen_rf_wesp = 1'b0;
@@ -238,8 +242,10 @@ module top_module(input         CLK,
             casex (inst)
                 `zLD   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
                 `zST   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                `zJALR : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                `zRET  : gen_mem_a2 = (alu_out[`MEM_A_MSB+2:0] - 4) >> 2;
                 `zPUSH : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
-                `zPOP  : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                `zPOP  : gen_mem_a2 = (alu_out[`MEM_A_MSB+2:0] - 4) >> 2;
                 default: gen_mem_a2 = 0;
             endcase
         end
@@ -252,6 +258,7 @@ module top_module(input         CLK,
             if (phase == `PH_M) begin
                 casex (inst)
                     `zST   : gen_mem_we2 = 1'b1;
+                    `zJALR : gen_mem_we2 = 1'b1;
                     `zPUSH : gen_mem_we2 = 1'b1;
                     default: gen_mem_we2 = 1'b0;
                 endcase
@@ -291,6 +298,7 @@ module top_module(input         CLK,
                     endcase
                 end
                 `zJR   : gen_pc_ct_taken = 1'b1;
+                `zRET  : gen_pc_ct_taken = 1'b1;
                 default: gen_pc_ct_taken = 0'b0;
             endcase
         end
@@ -303,9 +311,11 @@ module top_module(input         CLK,
         input [15:0] inst;
         input [31:0] rd1;
         input [31:0] rd2;
+        input [31:0] pc;
         begin
             casex(inst)
                 `zPUSH : gen_sr = rd2;
+                `zJALR : gen_sr = pc + 4;
                 default: gen_sr = rd1;
             endcase
         end
@@ -320,6 +330,8 @@ module top_module(input         CLK,
             casex (inst)
                 `zB    : gen_tr = pc;
                 `zBcc  : gen_tr = pc;
+                `zJALR : gen_tr = sp;
+                `zRET  : gen_tr = sp;
                 `zJR   : gen_tr = pc;
                 `zPUSH : gen_tr = sp;
                 `zPOP  : gen_tr = sp;

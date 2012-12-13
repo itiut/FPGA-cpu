@@ -55,8 +55,8 @@ module alu(input  [31:0] ir,
                 `zSRA  : exec = {{32{tr[31]}}, tr} >> ir[12:8]; // 5-bit mask
                 `zB    : exec = tr + 3 + {{24{ir[15]}}, ir[15:8]};
                 `zBcc  : exec = tr + 3 + {{24{ir[15]}}, ir[15:8]};
-                `zJALR : ;
-                `zRET  : ;
+                `zJALR : exec = tr - 4; // push
+                `zRET  : exec = tr + 4; // pop
                 `zJR   : exec = tr;
                 `zPUSH : exec = tr - 4;
                 `zPOP  : exec = tr + 4;
