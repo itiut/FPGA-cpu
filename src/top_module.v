@@ -50,9 +50,8 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // register_file
-    assign ra_ = gen_rf_ra(ir[31:16]); // {rg1, rg2}
-    assign ra1 = ra_[5:3];             // rg1
-    assign ra2 = ra_[2:0];             // rg2
+    assign ra1 = ir[21:19];             // rg1
+    assign ra2 = ir[18:16];             // rg2
     assign wa = gen_rf_wa(ir[31:16]);
     assign wd = gen_rf_wd(ir[31:16], dr, mdr);
     assign we = gen_rf_we(ir[31:16], phase);
@@ -140,23 +139,11 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // register_file argument generator
-    function [5:0] gen_rf_ra;
-        input [15:0] inst;
-        begin
-            casex (inst)
-                `zPUSH : gen_rf_ra = inst[13:8];
-                `zPOP  : gen_rf_ra = inst[13:8];
-                default: gen_rf_ra = inst[ 5:0];
-            endcase
-        end
-    endfunction
-
     function [3:0] gen_rf_wa;
         input [15:0] inst;
         begin
             casex (inst)
                 `zLD   : gen_rf_wa = inst[ 5:3]; // rg1
-                `zPOP  : gen_rf_wa = inst[10:8]; // rg2
                 default: gen_rf_wa = inst[ 3:0]; // rg2
             endcase
         end

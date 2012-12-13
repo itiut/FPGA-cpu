@@ -36,8 +36,8 @@
 `define zJALR 16'b_1111_1111_11_010xxx //          rg2
 `define zRET  16'b_1100_0011_1001_0000
 `define zJR   16'b_1111_1111_11_100xxx //          rg2
-`define zPUSH 16'b_0101_0xxx_1001_0000 // rg2
-`define zPOP  16'b_0101_1xxx_1001_0000 // rg2
+`define zPUSH 16'b_1001_0000_0101_0xxx //          rg2
+`define zPOP  16'b_1001_0000_0101_1xxx //          rg2
 `define zNOP  16'b_1001_0000_1001_0000
 `define zHLT  16'b_1111_0100_1001_0000
 
