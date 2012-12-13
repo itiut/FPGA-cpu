@@ -41,6 +41,24 @@
 `define zNOP  16'b_1001_0000_1001_0000
 `define zHLT  16'b_1111_0100_1001_0000
 
+// tttn encoding in 'zBcc' branch instruction
+`define ct_O   4'b_0000          // vf == 1
+`define ct_NO  4'b_0001          //    == 0
+`define ct_B   4'b_0010          // cf == 1
+`define ct_NB  4'b_0011          //    == 0
+`define ct_E   4'b_0100          // zf == 1
+`define ct_NE  4'b_0101          //    == 0
+`define ct_BE  4'b_0110          // cf|zf == 1
+`define ct_NBE 4'b_0111          //       == 0
+`define ct_S   4'b_1000          // sf == 1
+`define ct_NS  4'b_1001          //    == 0
+`define ct_P   4'b_1010          // pf == 1
+`define ct_NP  4'b_1011          //    == 0
+`define ct_L   4'b_1100          // sf^vf == 1
+`define ct_NL  4'b_1101          //       == 0
+`define ct_LE  4'b_1110          // (sf^vf)|zf == 1
+`define ct_NLE 4'b_1111          //            == 0
+
 // phase bit
 `define PH_F 5'b00001
 `define PH_R 5'b00010

@@ -53,14 +53,14 @@ module alu(input  [31:0] ir,
                 `zSLA  : exec = tr << ir[12:8];                 // 5-bit mask
                 `zSRL  : exec = tr >> ir[12:8];                 // 5-bit mask
                 `zSRA  : exec = {{32{tr[31]}}, tr} >> ir[12:8]; // 5-bit mask
-                `zB    : ;
-                `zBcc  : ;
+                `zB    : exec = tr + 3 + {{24{ir[15]}}, ir[15:8]};
+                `zBcc  : exec = tr + 3 + {{24{ir[15]}}, ir[15:8]};
                 `zJALR : ;
                 `zRET  : ;
-                `zJR   : ;
-                `zPUSH : ;
-                `zPOP  : ;
-                `zNOP  : ;
+                `zJR   : exec = tr;
+                `zPUSH : exec = tr - 4;
+                `zPOP  : exec = tr + 4;
+//                `zNOP  : ;
                 `zHLT  : ;
                 default: exec = 33'b0;
             endcase

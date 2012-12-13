@@ -8,10 +8,9 @@ module top_module(input         CLK,
     reg  [ 7:0]                 r_controller;
 
     // for register_file
-    wire [ 5:0]                 ra_;
-    wire [ 2:0]                 ra1, ra2, wa; // address
-    wire [31:0]                 rd1, rd2, wd; // read/write data
-    wire                        we;           // write enable
+    wire [ 2:0]                 ra1, ra2, wa, rasp, wasp; // address
+    wire [31:0]                 rd1, rd2, wd, rdsp, wdsp; // read/write data
+    wire                        we, wesp;           // write enable
     wire [31:0]                 r_reg [0:7];
 
     // for adder
@@ -34,6 +33,7 @@ module top_module(input         CLK,
 
     // for program_counter
     wire [31:0]                 pc;
+    wire                        ct_taken; // branch taken?
 
     // registers
     reg  [31:0]                 ir;  // instruction
@@ -55,8 +55,10 @@ module top_module(input         CLK,
     assign wa = gen_rf_wa(ir[31:16]);
     assign wd = gen_rf_wd(ir[31:16], dr, mdr);
     assign we = gen_rf_we(ir[31:16], phase);
+    assign wdsp = gen_rf_wdsp(ir[31:16], dr);
+    assign wesp = gen_rf_wesp(ir[31:16], phase);
 
-    register_file register_file(ra1, ra2, wa, rd1, rd2, wd, we, CLK, N_RST,
+    register_file register_file(ra1, ra2, wa, rd1, rd2, wd, we, rdsp, wdsp, wesp, CLK, N_RST,
                                 r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
 
 
@@ -99,6 +101,8 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // program_counter
+    assign ct_taken = gen_pc_ct_taken(ir[31:16], sf, zf, cf, vf, pf);
+
     program_counter program_counter(phase, 1'b0, dr, pc, CLK, N_RST, hlt);
 
 
@@ -114,8 +118,8 @@ module top_module(input         CLK,
                     ir <= mem_rd1;
                 end
                 `PH_R: begin
-                    sr <= rd1;
-                    tr <= rd2;
+                    sr <= gen_sr(ir[31:16], rd1, rd2);
+                    tr <= gen_tr(ir[31:16], rd2, pc, rdsp);
                 end
                 `PH_X: begin
                     dr <= alu_dr;
@@ -143,8 +147,8 @@ module top_module(input         CLK,
         input [15:0] inst;
         begin
             casex (inst)
-                `zLD   : gen_rf_wa = inst[ 5:3]; // rg1
-                default: gen_rf_wa = inst[ 3:0]; // rg2
+                `zLD   : gen_rf_wa = inst[5:3]; // rg1
+                default: gen_rf_wa = inst[3:0]; // rg2
             endcase
         end
     endfunction
@@ -156,6 +160,7 @@ module top_module(input         CLK,
         begin
             casex (inst)
                 `zLD   : gen_rf_wd = md;
+                `zPOP  : gen_rf_wd = md;
                 default: gen_rf_wd = d;
             endcase
         end
@@ -195,6 +200,34 @@ module top_module(input         CLK,
         end
     endfunction
 
+    function [31:0] gen_rf_wdsp;
+        input [15:0] inst;
+        input [31:0] d;
+        begin
+            casex (inst)
+                `zPUSH : gen_rf_wdsp = d;
+                `zPOP  : gen_rf_wdsp = d;
+                default: gen_rf_wdsp = 32'b0;
+            endcase
+        end
+    endfunction
+
+    function gen_rf_wesp;
+        input [15:0] inst;
+        input [ 4:0] phase;
+        begin
+            if (phase == `PH_W) begin
+                casex (inst)
+                    `zPUSH : gen_rf_wesp = 1'b1;
+                    `zPOP  : gen_rf_wesp = 1'b1;
+                    default: gen_rf_wesp = 1'b0;
+                endcase
+            end else begin
+                gen_rf_wesp = 1'b0;
+            end
+        end
+    endfunction
+
 
     /* ------------------------------------------------------ */
     // mem argument generator
@@ -205,6 +238,8 @@ module top_module(input         CLK,
             casex (inst)
                 `zLD   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
                 `zST   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                `zPUSH : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
+                `zPOP  : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
                 default: gen_mem_a2 = 0;
             endcase
         end
@@ -217,11 +252,79 @@ module top_module(input         CLK,
             if (phase == `PH_M) begin
                 casex (inst)
                     `zST   : gen_mem_we2 = 1'b1;
+                    `zPUSH : gen_mem_we2 = 1'b1;
                     default: gen_mem_we2 = 1'b0;
                 endcase
             end else begin
                 gen_mem_we2 = 1'b0;
             end
+        end
+    endfunction
+
+
+    /* ------------------------------------------------------ */
+    // program_counter argument generator
+    function gen_pc_ct_taken;
+        input [15:0] inst;
+        input sf, zf, cf, vf, pf;
+        begin
+            casex(inst)
+                `zB    : gen_pc_ct_taken = 1'b1;
+                `zBcc  : begin
+                    case (inst[3:0])
+                        `ct_O  : gen_pc_ct_taken = vf;
+                        `ct_NO : gen_pc_ct_taken = ~vf;
+                        `ct_B  : gen_pc_ct_taken = cf;
+                        `ct_NB : gen_pc_ct_taken = ~cf;
+                        `ct_E  : gen_pc_ct_taken = zf;
+                        `ct_NE : gen_pc_ct_taken = ~zf;
+                        `ct_BE : gen_pc_ct_taken = cf|zf;
+                        `ct_NBE: gen_pc_ct_taken = ~(cf|zf);
+                        `ct_S  : gen_pc_ct_taken = sf;
+                        `ct_NS : gen_pc_ct_taken = ~sf;
+                        `ct_P  : gen_pc_ct_taken = pf;
+                        `ct_NP : gen_pc_ct_taken = ~pf;
+                        `ct_L  : gen_pc_ct_taken = sf^vf;
+                        `ct_NL : gen_pc_ct_taken = ~(sf^vf);
+                        `ct_LE : gen_pc_ct_taken = (sf^vf)|zf;
+                        `ct_NLE: gen_pc_ct_taken = ~((sf^vf)|zf);
+                    endcase
+                end
+                `zJR   : gen_pc_ct_taken = 1'b1;
+                default: gen_pc_ct_taken = 0'b0;
+            endcase
+        end
+    endfunction
+
+
+    /* ------------------------------------------------------ */
+    // registers data generator
+    function [31:0] gen_sr;
+        input [15:0] inst;
+        input [31:0] rd1;
+        input [31:0] rd2;
+        begin
+            casex(inst)
+                `zPUSH : gen_sr = rd2;
+                default: gen_sr = rd1;
+            endcase
+        end
+    endfunction
+
+    function [31:0] gen_tr;
+        input [15:0] inst;
+        input [31:0] rd;
+        input [31:0] pc;
+        input [31:0] sp;
+        begin
+            casex (inst)
+                `zB    : gen_tr = pc;
+                `zBcc  : gen_tr = pc;
+                `zJR   : gen_tr = pc;
+                `zPUSH : gen_tr = sp;
+                `zPOP  : gen_tr = sp;
+                default: gen_tr = rd;
+            endcase
         end
     endfunction
 
