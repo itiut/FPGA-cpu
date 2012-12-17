@@ -60,8 +60,6 @@ module alu(input  [31:0] ir,
                 `zJR   : exec = tr;
                 `zPUSH : exec = tr - 4;
                 `zPOP  : exec = tr + 4;
-//                `zNOP  : ;
-                `zHLT  : ;
                 default: exec = 33'b0;
             endcase
         end

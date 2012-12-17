@@ -22,7 +22,7 @@ module top_module(input         CLK,
     wire                        alu_flag_up;
 
     // for phase_gen
-    reg                         hlt;
+    wire                        hlt;
     wire [ 4:0]                 phase;
 
     // for mem (read/write 2 ports)
@@ -101,6 +101,7 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // program_counter
+    assign hlt = (ir[31:16] == `zHLT);
     assign ct_taken = gen_pc_ct_taken(ir[31:16], sf, zf, cf, vf, pf);
 
     program_counter program_counter(phase, ct_taken, dr, pc, CLK, N_RST, hlt);
