@@ -13,10 +13,10 @@ module program_counter(input [ 4:0]      phase,
           pc <= 0;
         else if (hlt)
           pc <= 0;
+        else if (ct_taken)
+          pc <= dr;
         else if (phase == `PH_F)
           pc <= pc + 4;
-        else if (phase == `PH_W && ct_taken)
-          pc <= dr;
     end
 
 endmodule

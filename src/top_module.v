@@ -103,7 +103,7 @@ module top_module(input         CLK,
     // program_counter
     assign ct_taken = gen_pc_ct_taken(ir[31:16], sf, zf, cf, vf, pf);
 
-    program_counter program_counter(phase, 1'b0, dr, pc, CLK, N_RST, hlt);
+    program_counter program_counter(phase, ct_taken, dr, pc, CLK, N_RST, hlt);
 
 
     /* ------------------------------------------------------ */
@@ -332,7 +332,7 @@ module top_module(input         CLK,
                 `zBcc  : gen_tr = pc;
                 `zJALR : gen_tr = sp;
                 `zRET  : gen_tr = sp;
-                `zJR   : gen_tr = pc;
+//                `zJR   : gen_tr = pc;
                 `zPUSH : gen_tr = sp;
                 `zPOP  : gen_tr = sp;
                 default: gen_tr = rd;
