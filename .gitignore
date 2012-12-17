@@ -4,6 +4,8 @@
 # modelsim project liblary directory
 work/
 
+# modlsim project file
+*.mpf
 
 # from github/gitignore
 # ignore Quartus II generated files
