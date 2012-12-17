@@ -33,6 +33,7 @@ module top_module(input         CLK,
 
     // for program_counter
     wire [31:0]                 pc;
+    reg  [31:0]                 pcr;
     wire                        ct_taken; // branch taken?
 
     // registers
@@ -111,16 +112,17 @@ module top_module(input         CLK,
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir <= {`zNOP, `zNOP}; sr <= 0; tr <= 0; dr <= 0; mdr <= 0;
+            ir <= {`zNOP, `zNOP}; sr <= 0; tr <= 0; dr <= 0; mdr <= 0; pcr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
         end else begin
             case (phase)
                 `PH_F: begin
                     ir <= mem_rd1;
+                    pcr <= pc;
                 end
                 `PH_R: begin
-                    sr <= gen_sr(ir[31:16], rd1, rd2, pc);
-                    tr <= gen_tr(ir[31:16], rd2, pc, rdsp);
+                    sr <= gen_sr(ir[31:16], rd1, rd2, pcr);
+                    tr <= gen_tr(ir[31:16], rd2, pcr, rdsp);
                 end
                 `PH_X: begin
                     dr <= alu_dr;
