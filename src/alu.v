@@ -49,10 +49,10 @@ module alu(input  [31:0] ir,
                 `zXORI : exec = (ir[25]) ? tr ^ {{24{ir[15]}}, ir[15:8]} : tr ^ {24'b0, ir[15:8]};
                 `zNEG  : exec = ~{tr[31], tr} + 1;
                 `zNOT  : exec = ~{tr[31], tr};
-                `zSLL  : exec = tr << ir[12:8];                 // 5-bit mask
-                `zSLA  : exec = tr << ir[12:8];                 // 5-bit mask
-                `zSRL  : exec = tr >> ir[12:8];                 // 5-bit mask
-                `zSRA  : exec = {{32{tr[31]}}, tr} >> ir[12:8]; // 5-bit mask
+                `zSLL  : exec = tr << ((ir[28]) ? 1 : ir[12:8]);                 // 5-bit mask
+                `zSLA  : exec = tr << ((ir[28]) ? 1 : ir[12:8]);                 // 5-bit mask
+                `zSRL  : exec = tr >> ((ir[28]) ? 1 : ir[12:8]);                 // 5-bit mask
+                `zSRA  : exec = {{32{tr[31]}}, tr} >> ((ir[28]) ? 1 : ir[12:8]); // 5-bit mask
                 `zB    : exec = tr + 3 + {{24{ir[15]}}, ir[15:8]};
                 `zBcc  : exec = tr + 3 + {{24{ir[15]}}, ir[15:8]};
                 `zJALR : exec = tr - 4; // push

@@ -27,10 +27,10 @@
 `define zXORI 16'b_1000_00xx_11_110xxx // sw :     rg2 : sim8
 `define zNEG  16'b_1111_011x_11_011xxx // w  :     rg2
 `define zNOT  16'b_1111_011x_11_010xxx // w  :     rg2
-`define zSLL  16'b_1100_000x_11_100xxx // w  :     rg2 : sim8
-`define zSLA  16'b_1100_000x_11_100xxx // w  :     rg2 : sim8
-`define zSRL  16'b_1100_000x_11_101xxx // w  :     rg2 : sim8
-`define zSRA  16'b_1100_000x_11_111xxx // w  :     rg2 : sim8
+`define zSLL  16'b_110x_000x_11_100xxx // w  :     rg2 : sim8
+`define zSLA  16'b_110x_000x_11_100xxx // w  :     rg2 : sim8
+`define zSRL  16'b_110x_000x_11_101xxx // w  :     rg2 : sim8
+`define zSRA  16'b_110x_000x_11_111xxx // w  :     rg2 : sim8
 `define zB    16'b_1001_0000_1110_1011 //              : sim8
 `define zBcc  16'b_1001_0000_0111_xxxx //         tttn : sim8
 `define zJALR 16'b_1111_1111_11_010xxx //          rg2

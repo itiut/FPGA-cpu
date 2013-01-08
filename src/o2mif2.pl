@@ -26,36 +26,37 @@ $skip=0;
 
 while(<IN>){
 
-	
+
 	if ($skip == 1){
 		$skip=0;
 		next;
 	}
-	
+
 	if ( $_ =~ /:\t/ ) {
-		
+
 		if($byte == 0 ){
 			print(OUT " $n : ");
 		}
-		
+
 		$_1 = substr($_,6,2);
 		$_2 = substr($_,9,2);
 		$_3 = substr($_,12,2);
 		$_4 = substr($_,15,2);
-		
+
 		$_5 = substr($_,18,2);
 		if($_5 !~ /\s/){
 			die "Error: 5bytes instruction\n $_";
 		}
-		
-		# zSLL, zSLA, zSRL,zSRA
-		if( $_1 =~ /d1/ ) {
-			print(OUT "c1");
-		} else {
-			print(OUT "$_1");
-		}
+
+		# # zSLL, zSLA, zSRL,zSRA
+		# if( $_1 =~ /d1/ ) {
+		# 	print(OUT "c1");
+		# } else {
+		# 	print(OUT "$_1");
+		# }
+        print(OUT "$_1");
 		$byte++;
-		
+
 		# zLD
 		if( $_1 =~ /8b/ && substr($_,35,1) =~ /\(/) {
 			$tmp = hex(substr($_,9,1)) + 4;
@@ -80,12 +81,12 @@ while(<IN>){
 			$skip=1;
 			next;
 		}
-		
+
 		if($_2 !~ /\s/ && $byte < 4){
 			print(OUT "$_2");
 			$byte++;
 		}
-		
+
 		# zSLL, zSLA, zSRL,zSRA
 		if( $_1 =~ /d1/) {
 			print(OUT "00");
@@ -93,7 +94,7 @@ while(<IN>){
 			$skip=1;
 			next;
 		}
-		
+
 		if($_3 !~ /\s/ && $byte < 4){
 			print(OUT "$_3");
 			$byte++;
