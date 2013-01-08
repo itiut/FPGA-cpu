@@ -2,7 +2,7 @@
 
 module program_counter(input [ 4:0]      phase,
                        input             ct_taken, // 分岐成立．zB, zJR などでも 1
-                       input [31:0]      dr,
+                       input [31:0]      ct_pc,
                        output reg [31:0] pc,
                        input             clk,
                        input             n_rst,
@@ -16,7 +16,7 @@ module program_counter(input [ 4:0]      phase,
         else if (phase == `PH_F)
           pc <= pc + 4;
         else if (ct_taken)
-          pc <= dr;
+          pc <= ct_pc;
     end
 
 endmodule

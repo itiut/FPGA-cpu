@@ -35,6 +35,7 @@ module top_module(input         CLK,
     wire [31:0]                 pc;
     reg  [31:0]                 pcr;
     wire                        ct_taken; // branch taken?
+    wire [31:0]                 ct_pc;    // branch pc
 
     // registers
     reg  [31:0]                 ir;  // instruction
@@ -104,8 +105,9 @@ module top_module(input         CLK,
     // program_counter
     assign hlt = (ir[31:16] == `zHLT);
     assign ct_taken = gen_pc_ct_taken(ir[31:16], sf, zf, cf, vf, pf);
+    assign ct_pc = gen_pc_ct_pc(ir[31:16], dr, rd2, mem_rd2);
 
-    program_counter program_counter(phase, ct_taken, dr, pc, CLK, N_RST, hlt);
+    program_counter program_counter(phase, ct_taken, ct_pc, pc, CLK, N_RST, hlt);
 
 
     /* ------------------------------------------------------ */
@@ -300,9 +302,25 @@ module top_module(input         CLK,
                         `ct_NLE: gen_pc_ct_taken = ~((sf^vf)|zf);
                     endcase
                 end
-                `zJR   : gen_pc_ct_taken = 1'b1;
+                `zJALR : gen_pc_ct_taken = 1'b1;
                 `zRET  : gen_pc_ct_taken = 1'b1;
+                `zJR   : gen_pc_ct_taken = 1'b1;
                 default: gen_pc_ct_taken = 0'b0;
+            endcase
+        end
+    endfunction
+
+    function [31:0] gen_pc_ct_pc;
+        input [15:0] inst;
+        input [31:0] dr;
+        input [31:0] rd;
+        input [31:0] md;
+        begin
+            casex(inst)
+                `zJALR : gen_pc_ct_pc = rd;
+                `zRET  : gen_pc_ct_pc = md;
+                `zJR   : gen_pc_ct_pc = rd;
+                default: gen_pc_ct_pc = dr;
             endcase
         end
     endfunction

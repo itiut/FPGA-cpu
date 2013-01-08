@@ -7,7 +7,7 @@ module test_top_module;
         clk = 0; n_rst = 1;
         #5 n_rst = 0;
         #10 n_rst = 1;
-        #5000 $finish;
+        #10000 $finish;
     end
 
     always begin
