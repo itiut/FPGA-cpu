@@ -11,7 +11,7 @@ MAIN:
         zLIL    1020, sp
         zSUBI   8, sp
         zLIL    5, ax
-        zLIL    13, bx
+        zLIL    99, bx
         zST     ax, -8, bp
         zLIL    13, ax
         zST     ax, -4, bp
