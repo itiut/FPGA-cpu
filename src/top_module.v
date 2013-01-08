@@ -8,7 +8,7 @@ module top_module(input         CLK,
     reg  [ 7:0]                 r_controller;
 
     // for register_file
-    wire [ 2:0]                 ra1, ra2, wa, rasp, wasp; // address
+    wire [ 2:0]                 ra1, ra2, wa;             // address
     wire [31:0]                 rd1, rd2, wd, rdsp, wdsp; // read/write data
     wire                        we, wesp;           // write enable
     wire [31:0]                 r_reg [0:7];
