@@ -40,15 +40,6 @@ module pipeline_controller(input [15:0] inst_r,
         input [15:0] inst_r, inst_x, inst_m, inst_w;
         begin
             gen_r = 1'b1;
-            // if (src_rg1(inst_r) == dst_rg(inst_x)
-            //     || src_rg1(inst_r) == dst_rg(inst_m)
-            //     || src_rg1(inst_r) == dst_rg(inst_w)
-            //     || src_rg2(inst_r) == dst_rg(inst_x)
-            //     || src_rg2(inst_r) == dst_rg(inst_m)
-            //     || src_rg2(inst_r) == dst_rg(inst_w))
-            //   gen_r = 1'b0;
-            // else
-            //   gen_r = 1'b1;
         end
     endfunction
 
@@ -73,85 +64,90 @@ module pipeline_controller(input [15:0] inst_r,
         end
     endfunction
 
-    function [4:0] src_rg1;
+    function [4:0] addr_sr;
         input [15:0] inst;
         begin
             casex (inst)
-                `zST   : src_rg1 = {2'b0, inst[5:3]};
-                `zMOV  : src_rg1 = {2'b0, inst[5:3]};
-                `zADD  : src_rg1 = {2'b0, inst[5:3]};
-                `zSUB  : src_rg1 = {2'b0, inst[5:3]};
-                `zCMP  : src_rg1 = {2'b0, inst[5:3]};
-                `zAND  : src_rg1 = {2'b0, inst[5:3]};
-                `zOR   : src_rg1 = {2'b0, inst[5:3]};
-                `zXOR  : src_rg1 = {2'b0, inst[5:3]};
-                default: src_rg1 = 5'b10000;
+                `zST   : addr_sr = {2'b0, inst[5:3]};
+                `zMOV  : addr_sr = {2'b0, inst[5:3]};
+                `zADD  : addr_sr = {2'b0, inst[5:3]};
+                `zSUB  : addr_sr = {2'b0, inst[5:3]};
+                `zCMP  : addr_sr = {2'b0, inst[5:3]};
+                `zAND  : addr_sr = {2'b0, inst[5:3]};
+                `zOR   : addr_sr = {2'b0, inst[5:3]};
+                `zXOR  : addr_sr = {2'b0, inst[5:3]};
+                `zPUSH : addr_sr = {2'b0, inst[2:0]};
+                default: addr_sr = 5'b10000;
             endcase
         end
     endfunction
 
-    function [4:0] src_rg2;
+    function [4:0] addr_tr;
         input [15:0] inst;
         begin
             casex (inst)
-                `zLD   : src_rg2 = {2'b0, inst[2:0]};
-                `zST   : src_rg2 = {2'b0, inst[2:0]};
-                `zMOV  : src_rg2 = {2'b0, inst[2:0]};
-                `zADD  : src_rg2 = {2'b0, inst[2:0]};
-                `zADD  : src_rg2 = {2'b0, inst[2:0]};
-                `zSUB  : src_rg2 = {2'b0, inst[2:0]};
-                `zCMP  : src_rg2 = {2'b0, inst[2:0]};
-                `zAND  : src_rg2 = {2'b0, inst[2:0]};
-                `zOR   : src_rg2 = {2'b0, inst[2:0]};
-                `zXOR  : src_rg2 = {2'b0, inst[2:0]};
-                `zADDI : src_rg2 = {2'b0, inst[2:0]};
-                `zSUBI : src_rg2 = {2'b0, inst[2:0]};
-                `zCMPI : src_rg2 = {2'b0, inst[2:0]};
-                `zANDI : src_rg2 = {2'b0, inst[2:0]};
-                `zORI  : src_rg2 = {2'b0, inst[2:0]};
-                `zXORI : src_rg2 = {2'b0, inst[2:0]};
-                `zNEG  : src_rg2 = {2'b0, inst[2:0]};
-                `zNOT  : src_rg2 = {2'b0, inst[2:0]};
-                `zSLL  : src_rg2 = {2'b0, inst[2:0]};
-                `zSLA  : src_rg2 = {2'b0, inst[2:0]};
-                `zSRL  : src_rg2 = {2'b0, inst[2:0]};
-                `zSRA  : src_rg2 = {2'b0, inst[2:0]};
-                `zJR   : src_rg2 = {2'b0, inst[2:0]};
-                `zPUSH : src_rg2 = {2'b0, inst[2:0]};
-                `zPOP  : src_rg2 = {2'b0, inst[2:0]};
-                default: src_rg2 = 5'b10000;
+                `zLD   : addr_tr = {2'b0, inst[2:0]};
+                `zST   : addr_tr = {2'b0, inst[2:0]};
+                `zMOV  : addr_tr = {2'b0, inst[2:0]};
+                `zADD  : addr_tr = {2'b0, inst[2:0]};
+                `zADD  : addr_tr = {2'b0, inst[2:0]};
+                `zSUB  : addr_tr = {2'b0, inst[2:0]};
+                `zCMP  : addr_tr = {2'b0, inst[2:0]};
+                `zAND  : addr_tr = {2'b0, inst[2:0]};
+                `zOR   : addr_tr = {2'b0, inst[2:0]};
+                `zXOR  : addr_tr = {2'b0, inst[2:0]};
+                `zADDI : addr_tr = {2'b0, inst[2:0]};
+                `zSUBI : addr_tr = {2'b0, inst[2:0]};
+                `zCMPI : addr_tr = {2'b0, inst[2:0]};
+                `zANDI : addr_tr = {2'b0, inst[2:0]};
+                `zORI  : addr_tr = {2'b0, inst[2:0]};
+                `zXORI : addr_tr = {2'b0, inst[2:0]};
+                `zNEG  : addr_tr = {2'b0, inst[2:0]};
+                `zNOT  : addr_tr = {2'b0, inst[2:0]};
+                `zSLL  : addr_tr = {2'b0, inst[2:0]};
+                `zSLA  : addr_tr = {2'b0, inst[2:0]};
+                `zSRL  : addr_tr = {2'b0, inst[2:0]};
+                `zSRA  : addr_tr = {2'b0, inst[2:0]};
+                `zJR   : addr_tr = {2'b0, inst[2:0]};
+                `zJALR : addr_tr = {2'b0, `SP};
+                `zRET  : addr_tr = {2'b0, `SP};
+                `zPUSH : addr_tr = {2'b0, `SP};
+                `zPOP  : addr_tr = {2'b0, `SP};
+                default: addr_tr = 5'b10000;
             endcase
         end
     endfunction
 
-    function [4:0] dst_rg;
+    function [4:0] addr_alu;
         input [15:0] inst;
         begin
             casex (inst)
-                `zLD   : dst_rg = {2'b0, inst[2:0]};
-                `zLIL  : dst_rg = {2'b0, inst[2:0]};
-                `zMOV  : dst_rg = {2'b0, inst[2:0]};
-                `zADD  : dst_rg = {2'b0, inst[2:0]};
-                `zMOV  : dst_rg = {2'b0, inst[2:0]};
-                `zADD  : dst_rg = {2'b0, inst[2:0]};
-                `zSUB  : dst_rg = {2'b0, inst[2:0]};
-                `zAND  : dst_rg = {2'b0, inst[2:0]};
-                `zOR   : dst_rg = {2'b0, inst[2:0]};
-                `zXOR  : dst_rg = {2'b0, inst[2:0]};
-                `zADDI : dst_rg = {2'b0, inst[2:0]};
-                `zSUBI : dst_rg = {2'b0, inst[2:0]};
-                `zCMPI : dst_rg = {2'b0, inst[2:0]};
-                `zANDI : dst_rg = {2'b0, inst[2:0]};
-                `zORI  : dst_rg = {2'b0, inst[2:0]};
-                `zXORI : dst_rg = {2'b0, inst[2:0]};
-                `zNEG  : dst_rg = {2'b0, inst[2:0]};
-                `zNOT  : dst_rg = {2'b0, inst[2:0]};
-                `zSLL  : dst_rg = {2'b0, inst[2:0]};
-                `zSLA  : dst_rg = {2'b0, inst[2:0]};
-                `zSRL  : dst_rg = {2'b0, inst[2:0]};
-                `zSRA  : dst_rg = {2'b0, inst[2:0]};
-                `zPOP  : dst_rg = {2'b0, inst[2:0]};
-                default: dst_rg = 5'b01000;
+                `zLD   : addr_alu = {2'b0, inst[5:3]};
+                `zLIL  : addr_alu = {2'b0, inst[2:0]};
+                `zMOV  : addr_alu = {2'b0, inst[2:0]};
+                `zADD  : addr_alu = {2'b0, inst[2:0]};
+                `zMOV  : addr_alu = {2'b0, inst[2:0]};
+                `zADD  : addr_alu = {2'b0, inst[2:0]};
+                `zSUB  : addr_alu = {2'b0, inst[2:0]};
+                `zAND  : addr_alu = {2'b0, inst[2:0]};
+                `zOR   : addr_alu = {2'b0, inst[2:0]};
+                `zXOR  : addr_alu = {2'b0, inst[2:0]};
+                `zADDI : addr_alu = {2'b0, inst[2:0]};
+                `zSUBI : addr_alu = {2'b0, inst[2:0]};
+                `zANDI : addr_alu = {2'b0, inst[2:0]};
+                `zORI  : addr_alu = {2'b0, inst[2:0]};
+                `zXORI : addr_alu = {2'b0, inst[2:0]};
+                `zNEG  : addr_alu = {2'b0, inst[2:0]};
+                `zNOT  : addr_alu = {2'b0, inst[2:0]};
+                `zSLL  : addr_alu = {2'b0, inst[2:0]};
+                `zSLA  : addr_alu = {2'b0, inst[2:0]};
+                `zSRL  : addr_alu = {2'b0, inst[2:0]};
+                `zSRA  : addr_alu = {2'b0, inst[2:0]};
+                `zJALR : addr_alu = {2'b0, `SP};
+                `zRET  : addr_alu = {2'b0, `SP};
+                `zPUSH : addr_alu = {2'b0, `SP};
+                `zPOP  : addr_alu = {2'b0, `SP};
+                default: addr_alu = 5'b01000;
             endcase
         end
     endfunction
@@ -159,21 +155,21 @@ module pipeline_controller(input [15:0] inst_r,
     function [1:0] gen_fwd_x;
         input [15:0] inst_r, inst_x;
         begin
-            gen_fwd_x = {(src_rg1(inst_r) == dst_rg(inst_x)), (src_rg2(inst_r) == dst_rg(inst_x))};
+            gen_fwd_x = {(addr_sr(inst_r) == addr_alu(inst_x)), (addr_tr(inst_r) == addr_alu(inst_x))};
         end
     endfunction
 
     function [1:0] gen_fwd_m;
         input [15:0] inst_r, inst_m;
         begin
-            gen_fwd_m = {(src_rg1(inst_r) == dst_rg(inst_m)), (src_rg2(inst_r) == dst_rg(inst_m))};
+            gen_fwd_m = {(addr_sr(inst_r) == addr_alu(inst_m)), (addr_tr(inst_r) == addr_alu(inst_m))};
         end
     endfunction
 
     function [1:0] gen_fwd_w;
             input [15:0] inst_r, inst_w;
         begin
-            gen_fwd_w = {(src_rg1(inst_r) == dst_rg(inst_w)), (src_rg2(inst_r) == dst_rg(inst_w))};
+            gen_fwd_w = {(addr_sr(inst_r) == addr_alu(inst_w)), (addr_tr(inst_r) == addr_alu(inst_w))};
         end
     endfunction
 

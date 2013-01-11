@@ -98,9 +98,9 @@ module top_module(input         CLK,
     assign mem_we1 = 1'b0;
 
     // port2: load/store data
-    assign mem_a2 = gen_mem_a2(ir3[31:16], alu_dr);
-    assign mem_wd2 = sr2;
-    assign mem_we2 = gen_mem_we2(ir3[31:16], en_m);
+    assign mem_a2 = gen_mem_a2(ir2[31:16], alu_dr);
+    assign mem_wd2 = sr1;
+    assign mem_we2 = gen_mem_we2(ir2[31:16], en_m);
 
     mem mem(mem_a1, mem_a2, CLK, mem_wd1, mem_wd2, mem_we1, mem_we2, mem_rd1, mem_rd2);
 
@@ -353,7 +353,6 @@ module top_module(input         CLK,
             casex(inst)
                 `zJALR : gen_pc_ct_pc = rd;
                 `zRET  : gen_pc_ct_pc = md;
-                `zJR   : gen_pc_ct_pc = rd;
                 default: gen_pc_ct_pc = dr;
             endcase
         end
