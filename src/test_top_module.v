@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module test_top_module;
     reg         clk, n_rst;
     wire [63:0] seg_out;
@@ -5,9 +7,9 @@ module test_top_module;
 
     initial begin
         clk = 0; n_rst = 1;
-        #5 n_rst = 0;
+        #15 n_rst = 0;
         #10 n_rst = 1;
-        #10000 $finish;
+        #1000 $finish;
     end
 
     always begin
