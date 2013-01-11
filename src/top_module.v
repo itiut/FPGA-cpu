@@ -38,7 +38,9 @@ module top_module(input         CLK,
 
     // for pipeline_controller
     wire                        en_f, en_r, en_x, en_m, en_w; // phase enable
-    wire [ 5:0]                 forwarding;                   // [alu->sr, dr1->sr, dr2->sr, alu->tr, dr1->tr, dr2->tr]
+    wire [ 9:0]                 forwarding;
+                                // [alu->sr, dr1->sr, mem_rd2->sr, dr2->sr, mdr->sr
+                                //  alu->tr, dr1->tr, mem_rd2->tr, dr2->tr, mdr->tr]
 
     // registers
     reg  [31:0]                 ir0, ir1, ir2, ir3, ir4; // instruction
@@ -144,8 +146,8 @@ module top_module(input         CLK,
             if (en_r) begin
                 ir2 <= ir1;
                 pcr2 <= pcr1;
-                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr1, alu_dr, dr1, dr2, forwarding[5:3]);
-                tr <= gen_tr(ir1[31:16], rd2, pcr1, rdsp, alu_dr, dr1, dr2, forwarding[2:0]);
+                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr1, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[9:5]);
+                tr <= gen_tr(ir1[31:16], rd2, pcr1, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[4:0]);
                 if (~en_f)
                   ir1 <= {`zNOP, `zNOP};
             end
@@ -368,15 +370,21 @@ module top_module(input         CLK,
         input [31:0] pc;
         input [31:0] alu;
         input [31:0] dr1;
+        input [31:0] mem;
         input [31:0] dr2;
-        input [ 2:0] fwd;
+        input [31:0] mdr;
+        input [ 4:0] fwd;
         begin
-            if (fwd[2]) begin
+            if (fwd[4]) begin
                 gen_sr = alu;
-            end else if (fwd[1]) begin
+            end else if (fwd[3]) begin
                 gen_sr = dr1;
-            end else if (fwd[0]) begin
+            end else if (fwd[2]) begin
+                gen_sr = mem;
+            end else if (fwd[1]) begin
                 gen_sr = dr2;
+            end else if (fwd[0]) begin
+                gen_sr = mdr;
             end else begin
                 casex(inst)
                     `zPUSH : gen_sr = rd2;
@@ -394,15 +402,21 @@ module top_module(input         CLK,
         input [31:0] sp;
         input [31:0] alu;
         input [31:0] dr1;
+        input [31:0] mem;
         input [31:0] dr2;
-        input [ 2:0] fwd;
+        input [31:0] mdr;
+        input [ 4:0] fwd;
         begin
-            if (fwd[2]) begin
+            if (fwd[4]) begin
                 gen_tr = alu;
-            end else if (fwd[1]) begin
+            end else if (fwd[3]) begin
                 gen_tr = dr1;
-            end else if (fwd[0]) begin
+            end else if (fwd[2]) begin
+                gen_tr = mem;
+            end else if (fwd[1]) begin
                 gen_tr = dr2;
+            end else if (fwd[0]) begin
+                gen_tr = mdr;
             end else begin
                 casex (inst)
                     `zB    : gen_tr = pc;
