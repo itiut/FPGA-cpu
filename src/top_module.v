@@ -10,7 +10,7 @@ module top_module(input         CLK,
     // for register_file
     wire [ 2:0]                 ra1, ra2, wa;             // address
     wire [31:0]                 rd1, rd2, wd, rdsp, wdsp; // read/write data
-    wire                        we, wesp;           // write enable
+    wire                        we, wesp;                 // write enable
     wire [31:0]                 r_reg [0:7];
 
     // for adder
@@ -38,11 +38,11 @@ module top_module(input         CLK,
 
     // for pipeline_controller
     wire                        en_f, en_r, en_x, en_m, en_w; // phase enable
-
+    wire [ 5:0]                 forwarding;                   // [alu->sr, dr1->sr, dr2->sr, alu->tr, dr1->tr, dr2->tr]
 
     // registers
-    reg  [31:0]                 ir1, ir2, ir3, ir4;     // instruction
-    reg  [31:0]                 pcr1, pcr2, pcr3, pcr4; // program counter
+    reg  [31:0]                 ir0, ir1, ir2, ir3, ir4; // instruction
+    reg  [31:0]                 pcr1, pcr2, pcr3, pcr4;  // program counter
     reg  [31:0]                 sr1, sr2; // source (rg1)
     reg  [31:0]                 tr;       // target (rg2)
     reg  [31:0]                 dr1, dr2; // data
@@ -116,28 +116,38 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // pipeline_controller
+    pipeline_controller pipeline_controller(ir1[31:16], ir2[31:16], ir3[31:16], ir4[31:16], en_f, en_r, en_x, en_m, en_w, forwarding);
 
-    pipeline_controller pipeline_controller(ir1, ir2, ir3, ir4, en_f, en_r, en_x, en_m, en_w);
 
     /* ------------------------------------------------------ */
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP};
+            ir0 <= 32'b0; ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP};
             pcr1 <= 0; pcr2 <= 0; pcr3 <= 0; pcr4 <= 0;
             sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; mdr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
         end else if (~hlt) begin
             if (en_f) begin
-                if (mem_rd1 !== 32'bx)
-                  ir1 <= mem_rd1;
+                if (ir0 != 32'b0) begin
+                    ir1 <= ir0;
+                    ir0 <= 32'b0;
+                end else if (mem_rd1 !== 32'bx) begin
+                    ir1 <= mem_rd1;
+                end
                 pcr1 <= pc;
+            end else begin
+                if (ir0 == 32'b0) begin
+                    ir0 <= mem_rd1;
+                end
             end
             if (en_r) begin
                 ir2 <= ir1;
                 pcr2 <= pcr1;
-                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr1);
-                tr <= gen_tr(ir1[31:16], rd2, pcr1, rdsp);
+                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr1, alu_dr, dr1, dr2, forwarding[5:3]);
+                tr <= gen_tr(ir1[31:16], rd2, pcr1, rdsp, alu_dr, dr1, dr2, forwarding[2:0]);
+                if (~en_f)
+                  ir1 <= {`zNOP, `zNOP};
             end
             if (en_x) begin
                 ir3 <= ir2;
@@ -151,40 +161,21 @@ module top_module(input         CLK,
                     vf <= alu_vf;
                     pf <= alu_pf;
                 end
+                if (~en_r)
+                  ir2 <= {`zNOP, `zNOP};
             end
             if (en_m) begin
                 ir4 <= ir3;
                 pcr4 <= pcr3;
                 dr2 <= dr1;
                 mdr <= mem_rd2;
+                if (~en_x)
+                  ir3 <= {`zNOP, `zNOP};
             end
             if (en_w) begin
+                if (~en_m)
+                  ir4 <= {`zNOP, `zNOP};
             end
-            // case (phase)
-            //     `PH_F: begin
-            //         ir <= mem_rd1;
-            //         pcr <= pc;
-            //     end
-            //     `PH_R: begin
-            //         sr <= gen_sr(ir[31:16], rd1, rd2, pcr);
-            //         tr <= gen_tr(ir[31:16], rd2, pcr, rdsp);
-            //     end
-            //     `PH_X: begin
-            //         dr <= alu_dr;
-            //         if (alu_flag_up) begin
-            //             sf <= alu_sf;
-            //             zf <= alu_zf;
-            //             cf <= alu_cf;
-            //             vf <= alu_vf;
-            //             pf <= alu_pf;
-            //         end
-            //     end
-            //     `PH_M: begin
-            //         mdr <= mem_rd2;
-            //     end
-            //     `PH_W: begin
-            //     end
-            // endcase
         end
     end
 
@@ -285,15 +276,15 @@ module top_module(input         CLK,
     // mem argument generator
     function [`MEM_A_MSB:0] gen_mem_a2;
         input [31:0] inst;
-        input [31:0] alu_out;
+        input [31:0] alu;
         begin
             casex (inst)
-                `zLD   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
-                `zST   : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
-                `zJALR : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
-                `zRET  : gen_mem_a2 = (alu_out[`MEM_A_MSB+2:0] - 4) >> 2;
-                `zPUSH : gen_mem_a2 = alu_out[`MEM_A_MSB+2:2];
-                `zPOP  : gen_mem_a2 = (alu_out[`MEM_A_MSB+2:0] - 4) >> 2;
+                `zLD   : gen_mem_a2 = alu[`MEM_A_MSB+2:2];
+                `zST   : gen_mem_a2 = alu[`MEM_A_MSB+2:2];
+                `zJALR : gen_mem_a2 = alu[`MEM_A_MSB+2:2];
+                `zRET  : gen_mem_a2 = (alu[`MEM_A_MSB+2:0] - 4) >> 2;
+                `zPUSH : gen_mem_a2 = alu[`MEM_A_MSB+2:2];
+                `zPOP  : gen_mem_a2 = (alu[`MEM_A_MSB+2:0] - 4) >> 2;
                 default: gen_mem_a2 = 0;
             endcase
         end
@@ -376,12 +367,24 @@ module top_module(input         CLK,
         input [31:0] rd1;
         input [31:0] rd2;
         input [31:0] pc;
+        input [31:0] alu;
+        input [31:0] dr1;
+        input [31:0] dr2;
+        input [ 2:0] fwd;
         begin
-            casex(inst)
-                `zPUSH : gen_sr = rd2;
-                `zJALR : gen_sr = pc + 4;
-                default: gen_sr = rd1;
-            endcase
+            if (fwd[2]) begin
+                gen_sr = alu;
+            end else if (fwd[1]) begin
+                gen_sr = dr1;
+            end else if (fwd[0]) begin
+                gen_sr = dr2;
+            end else begin
+                casex(inst)
+                    `zPUSH : gen_sr = rd2;
+                    `zJALR : gen_sr = pc + 4;
+                    default: gen_sr = rd1;
+                endcase
+            end
         end
     endfunction
 
@@ -390,17 +393,28 @@ module top_module(input         CLK,
         input [31:0] rd;
         input [31:0] pc;
         input [31:0] sp;
+        input [31:0] alu;
+        input [31:0] dr1;
+        input [31:0] dr2;
+        input [ 2:0] fwd;
         begin
-            casex (inst)
-                `zB    : gen_tr = pc;
-                `zBcc  : gen_tr = pc;
-                `zJALR : gen_tr = sp;
-                `zRET  : gen_tr = sp;
-//                `zJR   : gen_tr = pc;
-                `zPUSH : gen_tr = sp;
-                `zPOP  : gen_tr = sp;
-                default: gen_tr = rd;
-            endcase
+            if (fwd[2]) begin
+                gen_tr = alu;
+            end else if (fwd[1]) begin
+                gen_tr = dr1;
+            end else if (fwd[0]) begin
+                gen_tr = dr2;
+            end else begin
+                casex (inst)
+                    `zB    : gen_tr = pc;
+                    `zBcc  : gen_tr = pc;
+                    `zJALR : gen_tr = sp;
+                    `zRET  : gen_tr = sp;
+                    `zPUSH : gen_tr = sp;
+                    `zPOP  : gen_tr = sp;
+                    default: gen_tr = rd;
+                endcase
+            end
         end
     endfunction
 
