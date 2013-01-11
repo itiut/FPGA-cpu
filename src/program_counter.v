@@ -1,6 +1,6 @@
 `include "header.v"
 
-module program_counter(input [ 4:0]      phase,
+module program_counter(input             en_f,
                        input             ct_taken, // 分岐成立．zB, zJR などでも 1
                        input [31:0]      ct_pc,
                        output reg [31:0] pc,
@@ -13,7 +13,7 @@ module program_counter(input [ 4:0]      phase,
           pc <= 0;
         else if (hlt)
           pc <= 0;
-        else if (phase == `PH_F)
+        else if (en_f)
           pc <= pc + 4;
         else if (ct_taken)
           pc <= ct_pc;

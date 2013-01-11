@@ -22,8 +22,7 @@ module top_module(input         CLK,
     wire                        alu_flag_up;
 
     // for phase_gen
-    wire                        hlt;
-    wire [ 4:0]                 phase;
+    // wire [ 4:0]                 phase;
 
     // for mem (read/write 2 ports)
     wire [`MEM_A_MSB:0]         mem_a1, mem_a2;   // read/write address
@@ -33,32 +32,37 @@ module top_module(input         CLK,
 
     // for program_counter
     wire [31:0]                 pc;
-    reg  [31:0]                 pcr;
     wire                        ct_taken; // branch taken?
     wire [31:0]                 ct_pc;    // branch pc
+    wire                        hlt;
+
+    // for pipeline_controller
+    wire                        en_f, en_r, en_x, en_m, en_w; // phase enable
+
 
     // registers
-    reg  [31:0]                 ir;  // instruction
-    reg  [31:0]                 sr;  // source (rg1)
-    reg  [31:0]                 tr;  // target (rg2)
-    reg  [31:0]                 dr;  // data
-    reg  [31:0]                 mdr; // memory data
-    reg                         sf;  // sign flag
-    reg                         zf;  // zero flag
-    reg                         cf;  // carry flag
-    reg                         vf;  // overflow flag
-    reg                         pf;  // parity flag
+    reg  [31:0]                 ir1, ir2, ir3, ir4;     // instruction
+    reg  [31:0]                 pcr1, pcr2, pcr3, pcr4; // program counter
+    reg  [31:0]                 sr1, sr2; // source (rg1)
+    reg  [31:0]                 tr;       // target (rg2)
+    reg  [31:0]                 dr1, dr2; // data
+    reg  [31:0]                 mdr;      // memory data
+    reg                         sf;       // sign flag
+    reg                         zf;       // zero flag
+    reg                         cf;       // carry flag
+    reg                         vf;       // overflow flag
+    reg                         pf;       // parity flag
 
 
     /* ------------------------------------------------------ */
     // register_file
-    assign ra1 = ir[21:19];             // rg1
-    assign ra2 = ir[18:16];             // rg2
-    assign wa = gen_rf_wa(ir[31:16]);
-    assign wd = gen_rf_wd(ir[31:16], dr, mdr);
-    assign we = gen_rf_we(ir[31:16], phase);
-    assign wdsp = gen_rf_wdsp(ir[31:16], dr);
-    assign wesp = gen_rf_wesp(ir[31:16], phase);
+    assign ra1 = ir1[21:19];             // rg1
+    assign ra2 = ir1[18:16];             // rg2
+    assign wa = gen_rf_wa(ir4[31:16]);
+    assign wd = gen_rf_wd(ir4[31:16], dr2, mdr);
+    assign we = gen_rf_we(ir4[31:16], en_w);
+    assign wdsp = gen_rf_wdsp(ir4[31:16], dr2);
+    assign wesp = gen_rf_wesp(ir4[31:16], en_w);
 
     register_file register_file(ra1, ra2, wa, rd1, rd2, wd, we, rdsp, wdsp, wesp, CLK, N_RST,
                                 r_reg[0], r_reg[1], r_reg[2], r_reg[3], r_reg[4], r_reg[5], r_reg[6], r_reg[7]);
@@ -74,8 +78,8 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // alu
-    assign alu_ir = ir;
-    assign alu_sr = sr;
+    assign alu_ir = ir2;
+    assign alu_sr = sr1;
     assign alu_tr = tr;
 
     alu alu(alu_ir, alu_sr, alu_tr, alu_dr, alu_sf, alu_zf, alu_cf, alu_vf, alu_pf, alu_flag_up);
@@ -83,7 +87,7 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // phase_gen
-    phase_gen phase_gen(hlt, phase, CLK, N_RST);
+    // phase_gen phase_gen(hlt, phase, CLK, N_RST);
 
 
     /* ------------------------------------------------------ */
@@ -94,54 +98,93 @@ module top_module(input         CLK,
     assign mem_we1 = 1'b0;
 
     // port2: load/store data
-    assign mem_a2 = gen_mem_a2(ir[31:16], alu_dr);
-    assign mem_wd2 = sr;
-    assign mem_we2 = gen_mem_we2(ir[31:16], phase);
+    assign mem_a2 = gen_mem_a2(ir3[31:16], alu_dr);
+    assign mem_wd2 = sr2;
+    assign mem_we2 = gen_mem_we2(ir3[31:16], en_m);
 
     mem mem(mem_a1, mem_a2, CLK, mem_wd1, mem_wd2, mem_we1, mem_we2, mem_rd1, mem_rd2);
 
 
     /* ------------------------------------------------------ */
     // program_counter
-    assign hlt = (ir[31:16] == `zHLT);
-    assign ct_taken = gen_pc_ct_taken(ir[31:16], sf, zf, cf, vf, pf);
-    assign ct_pc = gen_pc_ct_pc(ir[31:16], dr, rd2, mem_rd2);
+    assign hlt = (ir4[31:16] === `zHLT);
+    assign ct_taken = gen_pc_ct_taken(ir4[31:16], sf, zf, cf, vf, pf);
+    assign ct_pc = gen_pc_ct_pc(ir4[31:16], dr2, rd2, mem_rd2);
 
-    program_counter program_counter(phase, ct_taken, ct_pc, pc, CLK, N_RST, hlt);
+    program_counter program_counter(en_f, ct_taken, ct_pc, pc, CLK, N_RST, hlt);
 
+
+    /* ------------------------------------------------------ */
+    // pipeline_controller
+
+    pipeline_controller pipeline_controller(ir1, ir2, ir3, ir4, en_f, en_r, en_x, en_m, en_w);
 
     /* ------------------------------------------------------ */
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir <= {`zNOP, `zNOP}; sr <= 0; tr <= 0; dr <= 0; mdr <= 0; pcr <= 0;
+            ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP};
+            pcr1 <= 0; pcr2 <= 0; pcr3 <= 0; pcr4 <= 0;
+            sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; mdr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
-        end else begin
-            case (phase)
-                `PH_F: begin
-                    ir <= mem_rd1;
-                    pcr <= pc;
+        end else if (~hlt) begin
+            if (en_f) begin
+                if (mem_rd1 !== 32'bx)
+                  ir1 <= mem_rd1;
+                pcr1 <= pc;
+            end
+            if (en_r) begin
+                ir2 <= ir1;
+                pcr2 <= pcr1;
+                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr1);
+                tr <= gen_tr(ir1[31:16], rd2, pcr1, rdsp);
+            end
+            if (en_x) begin
+                ir3 <= ir2;
+                pcr3 <= pcr2;
+                sr2 <= sr1;
+                dr1 <= alu_dr;
+                if (alu_flag_up) begin
+                    sf <= alu_sf;
+                    zf <= alu_zf;
+                    cf <= alu_cf;
+                    vf <= alu_vf;
+                    pf <= alu_pf;
                 end
-                `PH_R: begin
-                    sr <= gen_sr(ir[31:16], rd1, rd2, pcr);
-                    tr <= gen_tr(ir[31:16], rd2, pcr, rdsp);
-                end
-                `PH_X: begin
-                    dr <= alu_dr;
-                    if (alu_flag_up) begin
-                        sf <= alu_sf;
-                        zf <= alu_zf;
-                        cf <= alu_cf;
-                        vf <= alu_vf;
-                        pf <= alu_pf;
-                    end
-                end
-                `PH_M: begin
-                    mdr <= mem_rd2;
-                end
-                `PH_W: begin
-                end
-            endcase
+            end
+            if (en_m) begin
+                ir4 <= ir3;
+                pcr4 <= pcr3;
+                dr2 <= dr1;
+                mdr <= mem_rd2;
+            end
+            if (en_w) begin
+            end
+            // case (phase)
+            //     `PH_F: begin
+            //         ir <= mem_rd1;
+            //         pcr <= pc;
+            //     end
+            //     `PH_R: begin
+            //         sr <= gen_sr(ir[31:16], rd1, rd2, pcr);
+            //         tr <= gen_tr(ir[31:16], rd2, pcr, rdsp);
+            //     end
+            //     `PH_X: begin
+            //         dr <= alu_dr;
+            //         if (alu_flag_up) begin
+            //             sf <= alu_sf;
+            //             zf <= alu_zf;
+            //             cf <= alu_cf;
+            //             vf <= alu_vf;
+            //             pf <= alu_pf;
+            //         end
+            //     end
+            //     `PH_M: begin
+            //         mdr <= mem_rd2;
+            //     end
+            //     `PH_W: begin
+            //     end
+            // endcase
         end
     end
 
@@ -173,9 +216,9 @@ module top_module(input         CLK,
 
     function gen_rf_we;
         input [15:0] inst;
-        input [ 4:0] phase;
+        input        en;
         begin
-            if (phase == `PH_W) begin
+            if (en) begin
                 casex (inst)
                     `zLD   : gen_rf_we = 1'b1;
                     `zLIL  : gen_rf_we = 1'b1;
@@ -221,9 +264,9 @@ module top_module(input         CLK,
 
     function gen_rf_wesp;
         input [15:0] inst;
-        input [ 4:0] phase;
+        input        en;
         begin
-            if (phase == `PH_W) begin
+            if (en) begin
                 casex (inst)
                     `zJALR : gen_rf_wesp = 1'b1;
                     `zRET  : gen_rf_wesp = 1'b1;
@@ -258,9 +301,9 @@ module top_module(input         CLK,
 
     function gen_mem_we2;
         input [15:0] inst;
-        input [ 4:0] phase;
+        input        en;
         begin
-            if (phase == `PH_M) begin
+            if (en) begin
                 casex (inst)
                     `zST   : gen_mem_we2 = 1'b1;
                     `zJALR : gen_mem_we2 = 1'b1;
