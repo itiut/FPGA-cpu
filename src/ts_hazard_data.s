@@ -12,9 +12,6 @@ _f:
         zLIL    2, bx
         zLIL    4, cx
         zLIL    8, dx
-        zNOP
-        zNOP
-        zNOP
         zADD    ax, bx
         zADD    bx, cx
         zADD    bx, dx
