@@ -5,7 +5,7 @@
 work/
 
 # modlsim project file
-*.mpf
+#*.mpf
 
 # from github/gitignore
 # ignore Quartus II generated files
