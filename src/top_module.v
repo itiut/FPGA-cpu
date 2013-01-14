@@ -38,9 +38,10 @@ module top_module(input         CLK,
 
     // for pipeline_controller
     wire                        en_f, en_r, en_x, en_m, en_w; // phase enable
-    wire [ 9:0]                 forwarding;
-                                // [alu->sr, dr1->sr, mem_rd2->sr, dr2->sr, mdr->sr
-                                //  alu->tr, dr1->tr, mem_rd2->tr, dr2->tr, mdr->tr]
+    wire [ 4:0]                 forwarding_sr; // [alu->sr, dr1->sr, mem_rd2->sr, dr2->sr, mdr->sr]
+    wire [ 4:0]                 forwarding_tr; // [alu->tr, dr1->tr, mem_rd2->tr, dr2->tr, mdr->tr]
+    wire [ 1:0]                 forwarding_ct_pc; //
+
 
     // registers
     reg  [31:0]                 ir0, ir1, ir2, ir3, ir4; // instruction
@@ -120,7 +121,8 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // pipeline_controller
-    pipeline_controller pipeline_controller(ir1[31:16], ir2[31:16], ir3[31:16], ir4[31:16], en_f, en_r, en_x, en_m, en_w, forwarding);
+    pipeline_controller pipeline_controller(ir1[31:16], ir2[31:16], ir3[31:16], ir4[31:16],
+                                            en_f, en_r, en_x, en_m, en_w, forwarding_sr, forwarding_tr, forwarding_ct_pc);
 
 
     /* ------------------------------------------------------ */
@@ -149,8 +151,8 @@ module top_module(input         CLK,
             if (en_r) begin
                 ir2 <= ir1;
                 pcr2 <= pcr1;
-                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr2, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[9:5]);
-                tr <= gen_tr(ir1[31:16], rd2, pcr2, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[4:0]);
+                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr2, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_sr);
+                tr <= gen_tr(ir1[31:16], rd2, pcr2, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_tr);
                 rg2r1 <= rd2;
                 if (~en_f)
                   ir1 <= {`zNOP, `zNOP};

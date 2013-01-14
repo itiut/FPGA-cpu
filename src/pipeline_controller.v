@@ -9,7 +9,9 @@ module pipeline_controller(input [15:0] inst_r,
                            output       en_x,
                            output       en_m,
                            output       en_w,
-                           output [9:0] forwarding);
+                           output [4:0] forwarding_sr,
+                           output [4:0] forwarding_tr,
+                           output [1:0] forwarding_ct_pc);
 
     wire       f, r, x, m, w;
     wire [1:0] fwd_x, fwd_m, fwd_w, fwd_m_mem, fwd_w_mem;
@@ -29,8 +31,8 @@ module pipeline_controller(input [15:0] inst_r,
     assign fwd_w = gen_fwd_w(inst_r, inst_w);
     assign fwd_m_mem = gen_fwd_m_mem(inst_r, inst_m);
     assign fwd_w_mem = gen_fwd_w_mem(inst_r, inst_w);
-    assign forwarding = {fwd_x[1], fwd_m[1], fwd_m_mem[1], fwd_w[1], fwd_w_mem[1],
-                         fwd_x[0], fwd_m[0], fwd_m_mem[0], fwd_w[0], fwd_w_mem[0]};
+    assign forwarding_sr = {fwd_x[1], fwd_m[1], fwd_m_mem[1], fwd_w[1], fwd_w_mem[1]};
+    assign forwarding_tr = {fwd_x[0], fwd_m[0], fwd_m_mem[0], fwd_w[0], fwd_w_mem[0]};
 
     function gen_f;
         input [15:0] inst_r, inst_x, inst_m, inst_w;
