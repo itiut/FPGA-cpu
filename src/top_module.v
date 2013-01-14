@@ -32,15 +32,17 @@ module top_module(input         CLK,
 
     // for program_counter
     wire [31:0]                 pc;
-    wire                        ct_taken; // branch taken?
-    wire [31:0]                 ct_pc;    // branch pc
+    wire                        ct_taken_x; // branch taken? in phase X
+    wire                        ct_taken_m; // branch taken? in phase M (only zRET)
+    wire [31:0]                 ct_pc_x;    // branch pc
+    wire [31:0]                 ct_pc_m;
     wire                        hlt;
 
     // for pipeline_controller
     wire                        en_f, en_r, en_x, en_m, en_w; // phase enable
-    wire [ 4:0]                 forwarding_sr; // [alu->sr, dr1->sr, mem_rd2->sr, dr2->sr, mdr->sr]
-    wire [ 4:0]                 forwarding_tr; // [alu->tr, dr1->tr, mem_rd2->tr, dr2->tr, mdr->tr]
-    wire [ 1:0]                 forwarding_ct_pc; //
+    wire [ 4:0]                 forwarding_sr;    // [alu->sr, dr1->sr, mem_rd2->sr, dr2->sr, mdr->sr]
+    wire [ 4:0]                 forwarding_tr;    // [alu->tr, dr1->tr, mem_rd2->tr, dr2->tr, mdr->tr]
+    wire [ 2:0]                 forwarding_rg2r;  //
 
 
     // registers
@@ -56,7 +58,7 @@ module top_module(input         CLK,
     reg                         vf;       // overflow flag
     reg                         pf;       // parity flag
     reg  [31:0]                 rg2r1, rg2r2;
-    reg                         ct_takenr; //
+    reg                         jumpedr;
 
 
     /* ------------------------------------------------------ */
@@ -113,16 +115,18 @@ module top_module(input         CLK,
     /* ------------------------------------------------------ */
     // program_counter
     assign hlt = (ir4[31:16] === `zHLT);
-    assign ct_taken = gen_pc_ct_taken(ir3[31:16], sf, zf, cf, vf, pf);
-    assign ct_pc = gen_pc_ct_pc(ir3[31:16], dr1, rg2r2, mem_rd2);
+    assign ct_taken_x = ~ct_taken_m & gen_pc_ct_taken(ir2[31:16], sf, zf, cf, vf, pf);
+    assign ct_taken_m = (ir3[31:16] === `zRET);
+    assign ct_pc_x = gen_pc_ct_pc(ir2[31:16], alu_dr, rg2r1);
+    assign ct_pc_m = mem_rd2;
 
-    program_counter program_counter(ct_taken, ct_pc, pc, CLK, N_RST, hlt);
+    program_counter program_counter(ct_taken_x, ct_taken_m, ct_pc_x, ct_pc_m, pc, CLK, N_RST, hlt);
 
 
     /* ------------------------------------------------------ */
     // pipeline_controller
     pipeline_controller pipeline_controller(ir1[31:16], ir2[31:16], ir3[31:16], ir4[31:16],
-                                            en_f, en_r, en_x, en_m, en_w, forwarding_sr, forwarding_tr, forwarding_ct_pc);
+                                            en_f, en_r, en_x, en_m, en_w, forwarding_sr, forwarding_tr, forwarding_rg2r);
 
 
     /* ------------------------------------------------------ */
@@ -133,16 +137,17 @@ module top_module(input         CLK,
             pcr1 <= 0; pcr2 <= 0; pcr3 <= 0; pcr4 <= 0;
             sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; mdr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
+            jumpedr <= 0;
         end else if (~hlt) begin
             if (en_f) begin
                 if (ir0 != 32'b0) begin
                     ir1 <= ir0;
                     ir0 <= 32'b0;
-                end else if (mem_rd1 !== 32'bx && ~ct_takenr) begin
+                end else if (mem_rd1 !== 32'bx && ~jumpedr) begin
                     ir1 <= mem_rd1;
                 end
                 pcr1 <= pc;
-                ct_takenr <= ct_taken;
+                jumpedr <= ct_taken_x | ct_taken_m;
             end else begin
                 if (ir0 == 32'b0) begin
                     ir0 <= mem_rd1;
@@ -185,11 +190,13 @@ module top_module(input         CLK,
                 if (~en_m)
                   ir4 <= {`zNOP, `zNOP};
             end
-            if (ct_taken) begin
+            if (ct_taken_m) begin
                 ir1 <= {`zNOP, `zNOP};
                 ir2 <= {`zNOP, `zNOP};
                 ir3 <= {`zNOP, `zNOP};
-//                ir4 <= {`zNOP, `zNOP};
+            end else if (ct_taken_x) begin
+                ir1 <= {`zNOP, `zNOP};
+                ir2 <= {`zNOP, `zNOP};
             end
         end
     end
@@ -352,7 +359,6 @@ module top_module(input         CLK,
                     endcase
                 end
                 `zJALR : gen_pc_ct_taken = 1'b1;
-                `zRET  : gen_pc_ct_taken = 1'b1;
                 `zJR   : gen_pc_ct_taken = 1'b1;
                 default: gen_pc_ct_taken = 0'b0;
             endcase
@@ -362,12 +368,10 @@ module top_module(input         CLK,
     function [31:0] gen_pc_ct_pc;
         input [15:0] inst;
         input [31:0] dr;
-        input [31:0] rd;
-        input [31:0] md;
+        input [31:0] rg2r;
         begin
             casex(inst)
-                `zJALR : gen_pc_ct_pc = rd;
-                `zRET  : gen_pc_ct_pc = md;
+                `zJALR : gen_pc_ct_pc = rg2r;
                 default: gen_pc_ct_pc = dr;
             endcase
         end

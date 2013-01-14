@@ -11,7 +11,7 @@ module pipeline_controller(input [15:0] inst_r,
                            output       en_w,
                            output [4:0] forwarding_sr,
                            output [4:0] forwarding_tr,
-                           output [1:0] forwarding_ct_pc);
+                           output [2:0] forwarding_rg2r);
 
     wire       f, r, x, m, w;
     wire [1:0] fwd_x, fwd_m, fwd_w, fwd_m_mem, fwd_w_mem;
@@ -33,6 +33,7 @@ module pipeline_controller(input [15:0] inst_r,
     assign fwd_w_mem = gen_fwd_w_mem(inst_r, inst_w);
     assign forwarding_sr = {fwd_x[1], fwd_m[1], fwd_m_mem[1], fwd_w[1], fwd_w_mem[1]};
     assign forwarding_tr = {fwd_x[0], fwd_m[0], fwd_m_mem[0], fwd_w[0], fwd_w_mem[0]};
+    assign forwarding_rg2r = gen_fwd_rg2r(inst_r, inst_x, inst_m, inst_w);
 
     function gen_f;
         input [15:0] inst_r, inst_x, inst_m, inst_w;
@@ -199,6 +200,16 @@ module pipeline_controller(input [15:0] inst_r,
                 `zLD   : gen_fwd_w_mem = {(addr_sr(inst_r) == {2'b0, inst_w[5:3]}), (addr_tr(inst_r) == {2'b0, inst_w[5:3]})};
                 `zPOP  : gen_fwd_w_mem = {(addr_sr(inst_r) == {2'b0, inst_w[2:0]}), (addr_tr(inst_r) == {2'b0, inst_w[2:0]})};
                 default: gen_fwd_w_mem = 2'b0;
+            endcase
+        end
+    endfunction
+
+    function [2:0] gen_fwd_rg2r;
+        input [15:0] inst_r, inst_x, inst_m, inst_w;
+        begin
+            casex (inst_r)
+//                `zJALR : gen_fwd_ct_pc = {({2'b0, inst_r[2:0]} == addr_alu(inst_w)),
+                default: gen_fwd_rg2r = 336'b0;
             endcase
         end
     endfunction
