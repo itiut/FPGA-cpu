@@ -9,10 +9,7 @@ _f:
 MAIN:
         zLIL    100, bp
         zLIL    100, sp
-        zLIL    64, ax
-        zNOP
-        zNOP
-        zNOP
+        zLIL    52, ax
         zJALR   ax
         zB      END
         zLIL    2, bx

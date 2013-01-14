@@ -42,29 +42,29 @@ module top_module(input         CLK,
     wire                        en_f, en_r, en_x, en_m, en_w; // phase enable
     wire [ 4:0]                 forwarding_sr;    // [alu->sr, dr1->sr, mem_rd2->sr, dr2->sr, mdr->sr]
     wire [ 4:0]                 forwarding_tr;    // [alu->tr, dr1->tr, mem_rd2->tr, dr2->tr, mdr->tr]
-    wire [ 2:0]                 forwarding_rg2r;  //
+    wire [ 2:0]                 forwarding_rg2r;  // [dr1->ct_pc_x, dr2->ct_pc_x, dr3->ct_pc_x] (only zJALR)
 
 
     // registers
-    reg  [31:0]                 ir0, ir1, ir2, ir3, ir4; // instruction
-    reg  [31:0]                 pcr1, pcr2, pcr3, pcr4;  // program counter
-    reg  [31:0]                 sr1, sr2; // source (rg1)
-    reg  [31:0]                 tr;       // target (rg2)
-    reg  [31:0]                 dr1, dr2; // data
-    reg  [31:0]                 mdr;      // memory data
-    reg                         sf;       // sign flag
-    reg                         zf;       // zero flag
-    reg                         cf;       // carry flag
-    reg                         vf;       // overflow flag
-    reg                         pf;       // parity flag
-    reg  [31:0]                 rg2r1, rg2r2;
-    reg                         jumpedr;
+    reg  [31:0]                 ir0, ir1, ir2, ir3, ir4, ir5; // instruction
+    reg  [31:0]                 pcr1, pcr2, pcr3, pcr4; // program counter
+    reg  [31:0]                 sr1, sr2;      // source (rg1)
+    reg  [31:0]                 tr;            // target (rg2)
+    reg  [31:0]                 dr1, dr2, dr3; // data
+    reg  [31:0]                 mdr;           // memory data
+    reg                         sf;            // sign flag
+    reg                         zf;            // zero flag
+    reg                         cf;            // carry flag
+    reg                         vf;            // overflow flag
+    reg                         pf;            // parity flag
+    reg  [31:0]                 rg2r;          // rg2 buffer
+    reg                         jumpedr;       // jumped?
 
 
     /* ------------------------------------------------------ */
     // register_file
-    assign ra1 = ir1[21:19];             // rg1
-    assign ra2 = ir1[18:16];             // rg2
+    assign ra1 = ir1[21:19];             // rg1 address
+    assign ra2 = ir1[18:16];             // rg2 address
     assign wa = gen_rf_wa(ir4[31:16]);
     assign wd = gen_rf_wd(ir4[31:16], dr2, mdr);
     assign we = gen_rf_we(ir4[31:16], en_w);
@@ -117,7 +117,7 @@ module top_module(input         CLK,
     assign hlt = (ir4[31:16] === `zHLT);
     assign ct_taken_x = ~ct_taken_m & gen_pc_ct_taken(ir2[31:16], sf, zf, cf, vf, pf);
     assign ct_taken_m = (ir3[31:16] === `zRET);
-    assign ct_pc_x = gen_pc_ct_pc(ir2[31:16], alu_dr, rg2r1);
+    assign ct_pc_x = gen_pc_ct_pc(ir2[31:16], alu_dr, rg2r, forwarding_rg2r, dr1, dr2, dr3);
     assign ct_pc_m = mem_rd2;
 
     program_counter program_counter(ct_taken_x, ct_taken_m, ct_pc_x, ct_pc_m, pc, CLK, N_RST, hlt);
@@ -125,7 +125,7 @@ module top_module(input         CLK,
 
     /* ------------------------------------------------------ */
     // pipeline_controller
-    pipeline_controller pipeline_controller(ir1[31:16], ir2[31:16], ir3[31:16], ir4[31:16],
+    pipeline_controller pipeline_controller(ir1[31:16], ir2[31:16], ir3[31:16], ir4[31:16], ir5[31:16],
                                             en_f, en_r, en_x, en_m, en_w, forwarding_sr, forwarding_tr, forwarding_rg2r);
 
 
@@ -133,9 +133,9 @@ module top_module(input         CLK,
     // main
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
-            ir0 <= 32'b0; ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP};
+            ir0 <= 32'b0; ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP}; ir5 <= {`zNOP, `zNOP};
             pcr1 <= 0; pcr2 <= 0; pcr3 <= 0; pcr4 <= 0;
-            sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; mdr <= 0;
+            sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; dr3 <= 0;mdr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
             jumpedr <= 0;
         end else if (~hlt) begin
@@ -158,7 +158,7 @@ module top_module(input         CLK,
                 pcr2 <= pcr1;
                 sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr2, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_sr);
                 tr <= gen_tr(ir1[31:16], rd2, pcr2, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_tr);
-                rg2r1 <= rd2;
+                rg2r <= rd2;
                 if (~en_f)
                   ir1 <= {`zNOP, `zNOP};
             end
@@ -167,7 +167,6 @@ module top_module(input         CLK,
                 pcr3 <= pcr2;
                 sr2 <= sr1;
                 dr1 <= alu_dr;
-                rg2r2 <= rg2r1;
                 if (alu_flag_up) begin
                     sf <= alu_sf;
                     zf <= alu_zf;
@@ -187,6 +186,8 @@ module top_module(input         CLK,
                   ir3 <= {`zNOP, `zNOP};
             end
             if (en_w) begin
+                ir5 <= ir4;
+                dr3 <= dr2;
                 if (~en_m)
                   ir4 <= {`zNOP, `zNOP};
             end
@@ -367,12 +368,18 @@ module top_module(input         CLK,
 
     function [31:0] gen_pc_ct_pc;
         input [15:0] inst;
-        input [31:0] dr;
+        input [31:0] alu;
         input [31:0] rg2r;
+        input [ 2:0] fwd_rg2r;
+        input [31:0] dr1;
+        input [31:0] dr2;
+        input [31:0] dr3;
         begin
             casex(inst)
-                `zJALR : gen_pc_ct_pc = rg2r;
-                default: gen_pc_ct_pc = dr;
+                `zJALR : gen_pc_ct_pc = (fwd_rg2r[2]) ? dr1 :
+                                        (fwd_rg2r[1]) ? dr2 :
+                                        (fwd_rg2r[0]) ? dr3 : rg2r;
+                default: gen_pc_ct_pc = alu;
             endcase
         end
     endfunction

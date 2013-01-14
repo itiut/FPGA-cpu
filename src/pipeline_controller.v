@@ -4,6 +4,7 @@ module pipeline_controller(input [15:0] inst_r,
                            input [15:0] inst_x,
                            input [15:0] inst_m,
                            input [15:0] inst_w,
+                           input [15:0] inst_end,
                            output       en_f,
                            output       en_r,
                            output       en_x,
@@ -16,31 +17,24 @@ module pipeline_controller(input [15:0] inst_r,
     wire       f, r, x, m, w;
     wire [1:0] fwd_x, fwd_m, fwd_w, fwd_m_mem, fwd_w_mem;
 
-    assign f = gen_f(inst_r, inst_x, inst_m, inst_w);
-    assign r = gen_r(inst_r, inst_x, inst_m, inst_w);
-    assign x = gen_x(inst_r, inst_x, inst_m, inst_w);
-    assign m = gen_m(inst_r, inst_x, inst_m, inst_w);
-    assign w = gen_w(inst_r, inst_x, inst_m, inst_w);
+    assign f = 1'b1;
+    assign r = gen_r(inst_r, inst_x, inst_m, inst_w); // 1 stall in zLD and zPUSH even in forwarding
+    assign x = 1'b1;
+    assign m = 1'b1;
+    assign w = 1'b1;
     assign en_f = f & r & x & m & w;
     assign en_r =     r & x & m & w;
     assign en_x =         x & m & w;
     assign en_m =             m & w;
     assign en_w =                 w;
-    assign fwd_x = gen_fwd_x(inst_r, inst_x);
-    assign fwd_m = gen_fwd_m(inst_r, inst_m);
-    assign fwd_w = gen_fwd_w(inst_r, inst_w);
-    assign fwd_m_mem = gen_fwd_m_mem(inst_r, inst_m);
-    assign fwd_w_mem = gen_fwd_w_mem(inst_r, inst_w);
+    assign fwd_x = gen_fwd(inst_r, inst_x);
+    assign fwd_m = gen_fwd(inst_r, inst_m);
+    assign fwd_w = gen_fwd(inst_r, inst_w);
+    assign fwd_m_mem = gen_fwd_mem(inst_r, inst_m);
+    assign fwd_w_mem = gen_fwd_mem(inst_r, inst_w);
     assign forwarding_sr = {fwd_x[1], fwd_m[1], fwd_m_mem[1], fwd_w[1], fwd_w_mem[1]};
     assign forwarding_tr = {fwd_x[0], fwd_m[0], fwd_m_mem[0], fwd_w[0], fwd_w_mem[0]};
-    assign forwarding_rg2r = gen_fwd_rg2r(inst_r, inst_x, inst_m, inst_w);
-
-    function gen_f;
-        input [15:0] inst_r, inst_x, inst_m, inst_w;
-        begin
-            gen_f = 1'b1;
-        end
-    endfunction
+    assign forwarding_rg2r = gen_fwd_rg2r(inst_x, inst_m, inst_w, inst_end);
 
     function gen_r;
         input [15:0] inst_r, inst_x, inst_m, inst_w;
@@ -50,27 +44,6 @@ module pipeline_controller(input [15:0] inst_r,
                 `zPOP  : gen_r = (addr_sr(inst_r) != {2'b0, inst_x[2:0]}) && (addr_tr(inst_r) != {2'b0, inst_x[2:0]});
                 default: gen_r = 1'b1;
             endcase
-        end
-    endfunction
-
-    function gen_x;
-        input [15:0] inst_r, inst_x, inst_m, inst_w;
-        begin
-            gen_x = 1'b1;
-        end
-    endfunction
-
-    function gen_m;
-        input [15:0] inst_r, inst_x, inst_m, inst_w;
-        begin
-            gen_m = 1'b1;
-        end
-    endfunction
-
-    function gen_w;
-        input [15:0] inst_r, inst_x, inst_m, inst_w;
-        begin
-            gen_w = 1'b1;
         end
     endfunction
 
@@ -161,55 +134,32 @@ module pipeline_controller(input [15:0] inst_r,
         end
     endfunction
 
-    function [1:0] gen_fwd_x;
-        input [15:0] inst_r, inst_x;
+    function [1:0] gen_fwd;
+        input [15:0] inst_r, inst_xmw;
         begin
-            gen_fwd_x = {(addr_sr(inst_r) == addr_alu(inst_x)), (addr_tr(inst_r) == addr_alu(inst_x))};
+            gen_fwd = {(addr_sr(inst_r) == addr_alu(inst_xmw)), (addr_tr(inst_r) == addr_alu(inst_xmw))};
         end
     endfunction
 
-    function [1:0] gen_fwd_m;
-        input [15:0] inst_r, inst_m;
-        begin
-            gen_fwd_m = {(addr_sr(inst_r) == addr_alu(inst_m)), (addr_tr(inst_r) == addr_alu(inst_m))};
-        end
-    endfunction
-
-    function [1:0] gen_fwd_w;
-            input [15:0] inst_r, inst_w;
-        begin
-            gen_fwd_w = {(addr_sr(inst_r) == addr_alu(inst_w)), (addr_tr(inst_r) == addr_alu(inst_w))};
-        end
-    endfunction
-
-    function [1:0] gen_fwd_m_mem;
-        input [15:0] inst_r, inst_m;
+    function [1:0] gen_fwd_mem;
+        input [15:0] inst_r, inst_mw;
         begin
             casex (inst_m)
-                `zLD   : gen_fwd_m_mem = {(addr_sr(inst_r) == {2'b0, inst_m[5:3]}), (addr_tr(inst_r) == {2'b0, inst_m[5:3]})};
-                `zPOP  : gen_fwd_m_mem = {(addr_sr(inst_r) == {2'b0, inst_m[2:0]}), (addr_tr(inst_r) == {2'b0, inst_m[2:0]})};
-                default: gen_fwd_m_mem = 2'b0;
-            endcase
-        end
-    endfunction
-
-    function [1:0] gen_fwd_w_mem;
-        input [15:0] inst_r, inst_w;
-        begin
-            casex (inst_w)
-                `zLD   : gen_fwd_w_mem = {(addr_sr(inst_r) == {2'b0, inst_w[5:3]}), (addr_tr(inst_r) == {2'b0, inst_w[5:3]})};
-                `zPOP  : gen_fwd_w_mem = {(addr_sr(inst_r) == {2'b0, inst_w[2:0]}), (addr_tr(inst_r) == {2'b0, inst_w[2:0]})};
-                default: gen_fwd_w_mem = 2'b0;
+                `zLD   : gen_fwd_mem = {(addr_sr(inst_r) == {2'b0, inst_mw[5:3]}), (addr_tr(inst_r) == {2'b0, inst_mw[5:3]})};
+                `zPOP  : gen_fwd_mem = {(addr_sr(inst_r) == {2'b0, inst_mw[2:0]}), (addr_tr(inst_r) == {2'b0, inst_mw[2:0]})};
+                default: gen_fwd_mem = 2'b0;
             endcase
         end
     endfunction
 
     function [2:0] gen_fwd_rg2r;
-        input [15:0] inst_r, inst_x, inst_m, inst_w;
+        input [15:0] inst_x, inst_m, inst_w, inst_end;
         begin
-            casex (inst_r)
-//                `zJALR : gen_fwd_ct_pc = {({2'b0, inst_r[2:0]} == addr_alu(inst_w)),
-                default: gen_fwd_rg2r = 336'b0;
+            casex (inst_x)
+                `zJALR : gen_fwd_rg2r = {({2'b0, inst_x[2:0]} == addr_alu(inst_m)),
+                                         ({2'b0, inst_x[2:0]} == addr_alu(inst_w)),
+                                         ({2'b0, inst_x[2:0]} == addr_alu(inst_end))};
+                default: gen_fwd_rg2r = 2'b0;
             endcase
         end
     endfunction
