@@ -54,6 +54,8 @@ module top_module(input         CLK,
     reg                         cf;       // carry flag
     reg                         vf;       // overflow flag
     reg                         pf;       // parity flag
+    reg  [31:0]                 rg2r1, rg2r2;
+    reg                         ct_takenr; //
 
 
     /* ------------------------------------------------------ */
@@ -110,10 +112,10 @@ module top_module(input         CLK,
     /* ------------------------------------------------------ */
     // program_counter
     assign hlt = (ir4[31:16] === `zHLT);
-    assign ct_taken = gen_pc_ct_taken(ir4[31:16], sf, zf, cf, vf, pf);
-    assign ct_pc = gen_pc_ct_pc(ir4[31:16], dr2, rd2, mem_rd2);
+    assign ct_taken = gen_pc_ct_taken(ir3[31:16], sf, zf, cf, vf, pf);
+    assign ct_pc = gen_pc_ct_pc(ir3[31:16], dr1, rg2r2, mem_rd2);
 
-    program_counter program_counter(en_f, ct_taken, ct_pc, pc, CLK, N_RST, hlt);
+    program_counter program_counter(ct_taken, ct_pc, pc, CLK, N_RST, hlt);
 
 
     /* ------------------------------------------------------ */
@@ -134,10 +136,11 @@ module top_module(input         CLK,
                 if (ir0 != 32'b0) begin
                     ir1 <= ir0;
                     ir0 <= 32'b0;
-                end else if (mem_rd1 !== 32'bx) begin
+                end else if (mem_rd1 !== 32'bx && ~ct_takenr) begin
                     ir1 <= mem_rd1;
                 end
                 pcr1 <= pc;
+                ct_takenr <= ct_taken;
             end else begin
                 if (ir0 == 32'b0) begin
                     ir0 <= mem_rd1;
@@ -146,8 +149,9 @@ module top_module(input         CLK,
             if (en_r) begin
                 ir2 <= ir1;
                 pcr2 <= pcr1;
-                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr1, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[9:5]);
-                tr <= gen_tr(ir1[31:16], rd2, pcr1, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[4:0]);
+                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr2, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[9:5]);
+                tr <= gen_tr(ir1[31:16], rd2, pcr2, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding[4:0]);
+                rg2r1 <= rd2;
                 if (~en_f)
                   ir1 <= {`zNOP, `zNOP};
             end
@@ -156,6 +160,7 @@ module top_module(input         CLK,
                 pcr3 <= pcr2;
                 sr2 <= sr1;
                 dr1 <= alu_dr;
+                rg2r2 <= rg2r1;
                 if (alu_flag_up) begin
                     sf <= alu_sf;
                     zf <= alu_zf;
@@ -177,6 +182,12 @@ module top_module(input         CLK,
             if (en_w) begin
                 if (~en_m)
                   ir4 <= {`zNOP, `zNOP};
+            end
+            if (ct_taken) begin
+                ir1 <= {`zNOP, `zNOP};
+                ir2 <= {`zNOP, `zNOP};
+                ir3 <= {`zNOP, `zNOP};
+//                ir4 <= {`zNOP, `zNOP};
             end
         end
     end
