@@ -48,7 +48,6 @@ while(<IN>){
 			die "Error: 5bytes instruction\n $_";
 		}
 
-		# zSLL, zSLA, zSRL,zSRA
         print(OUT "$_1");
 		$byte++;
 
