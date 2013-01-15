@@ -47,7 +47,7 @@ module top_module(input         CLK,
 
     // registers
     reg  [31:0]                 ir0, ir1, ir2, ir3, ir4, ir5; // instruction
-    reg  [31:0]                 pcr1, pcr2, pcr3, pcr4; // program counter
+    reg  [31:0]                 pcr1, pcr2;    // program counter
     reg  [31:0]                 sr1, sr2;      // source (rg1)
     reg  [31:0]                 tr;            // target (rg2)
     reg  [31:0]                 dr1, dr2, dr3; // data
@@ -134,8 +134,7 @@ module top_module(input         CLK,
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
             ir0 <= 32'b0; ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP}; ir5 <= {`zNOP, `zNOP};
-            pcr1 <= 0; pcr2 <= 0; pcr3 <= 0; pcr4 <= 0;
-            sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; dr3 <= 0;mdr <= 0;
+            pcr1 <= 0; pcr2 <= 0; sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; dr3 <= 0; mdr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
             jumpedr <= 0;
         end else if (~hlt) begin
@@ -164,7 +163,6 @@ module top_module(input         CLK,
             end
             if (en_x) begin
                 ir3 <= ir2;
-                pcr3 <= pcr2;
                 sr2 <= sr1;
                 dr1 <= alu_dr;
                 if (alu_flag_up) begin
@@ -179,7 +177,6 @@ module top_module(input         CLK,
             end
             if (en_m) begin
                 ir4 <= ir3;
-                pcr4 <= pcr3;
                 dr2 <= dr1;
                 mdr <= mem_rd2;
                 if (~en_x)
