@@ -18,7 +18,7 @@ module pipeline_controller(input [15:0] inst_r,
     wire [1:0] fwd_x, fwd_m, fwd_w, fwd_m_mem, fwd_w_mem;
 
     assign f = 1'b1;
-    assign r = gen_r(inst_r, inst_x, inst_m, inst_w); // 1 stall in zLD and zPUSH even in forwarding
+    assign r = gen_r(inst_r, inst_x, inst_m, inst_w); // 1 stall in zLD and zPOP even in forwarding
     assign x = 1'b1;
     assign m = 1'b1;
     assign w = 1'b1;
