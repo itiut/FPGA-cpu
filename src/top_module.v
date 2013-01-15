@@ -138,15 +138,19 @@ module top_module(input         CLK,
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
             jumpedr <= 0;
         end else if (~hlt) begin
+            jumpedr <= ct_taken_x | ct_taken_m;
             if (en_f) begin
-                if (ir0 != 32'b0) begin
-                    ir1 <= ir0;
+                if (~jumpedr) begin
+                    if (ir0 != 32'b0) begin
+                        ir1 <= ir0;
+                        ir0 <= 32'b0;
+                    end else if (mem_rd1 !== 32'bx) begin
+                        ir1 <= mem_rd1;
+                    end
+                end else begin
                     ir0 <= 32'b0;
-                end else if (mem_rd1 !== 32'bx && ~jumpedr) begin
-                    ir1 <= mem_rd1;
                 end
                 pcr1 <= pc;
-                jumpedr <= ct_taken_x | ct_taken_m;
             end else begin
                 if (ir0 == 32'b0) begin
                     ir0 <= mem_rd1;
