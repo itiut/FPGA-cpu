@@ -48,7 +48,7 @@ module top_module(input         CLK,
     // registers
     reg  [31:0]                 ir0, ir1, ir2, ir3, ir4, ir5; // instruction
     reg  [31:0]                 pcr1, pcr2;    // program counter
-    reg  [31:0]                 sr1, sr2;      // source (rg1)
+    reg  [31:0]                 sr;            // source (rg1)
     reg  [31:0]                 tr;            // target (rg2)
     reg  [31:0]                 dr1, dr2, dr3; // data
     reg  [31:0]                 mdr;           // memory data
@@ -86,7 +86,7 @@ module top_module(input         CLK,
     /* ------------------------------------------------------ */
     // alu
     assign alu_ir = ir2;
-    assign alu_sr = sr1;
+    assign alu_sr = sr;
     assign alu_tr = tr;
 
     alu alu(alu_ir, alu_sr, alu_tr, alu_dr, alu_sf, alu_zf, alu_cf, alu_vf, alu_pf, alu_flag_up);
@@ -106,7 +106,7 @@ module top_module(input         CLK,
 
     // port2: load/store data
     assign mem_a2 = gen_mem_a2(ir2[31:16], alu_dr);
-    assign mem_wd2 = sr1;
+    assign mem_wd2 = sr;
     assign mem_we2 = gen_mem_we2(ir2[31:16], en_m);
 
     mem mem(mem_a1, mem_a2, CLK, mem_wd1, mem_wd2, mem_we1, mem_we2, mem_rd1, mem_rd2);
@@ -134,7 +134,7 @@ module top_module(input         CLK,
     always @(posedge CLK or negedge N_RST) begin
         if (~N_RST) begin
             ir0 <= 32'b0; ir1 <= {`zNOP, `zNOP}; ir2 <= {`zNOP, `zNOP}; ir3 <= {`zNOP, `zNOP}; ir4 <= {`zNOP, `zNOP}; ir5 <= {`zNOP, `zNOP};
-            pcr1 <= 0; pcr2 <= 0; sr1 <= 0; sr2 <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; dr3 <= 0; mdr <= 0;
+            pcr1 <= 0; pcr2 <= 0; sr <= 0; tr <= 0; dr1 <= 0; dr2 <= 0; dr3 <= 0; mdr <= 0;
             sf <= 0; zf <= 0; cf <= 0; vf <= 0; pf <= 0;
             jumpedr <= 0;
         end else if (~hlt) begin
@@ -159,7 +159,7 @@ module top_module(input         CLK,
             if (en_r) begin
                 ir2 <= ir1;
                 pcr2 <= pcr1;
-                sr1 <= gen_sr(ir1[31:16], rd1, rd2, pcr2, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_sr);
+                sr <= gen_sr(ir1[31:16], rd1, rd2, pcr2, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_sr);
                 tr <= gen_tr(ir1[31:16], rd2, pcr2, rdsp, alu_dr, dr1, mem_rd2, dr2, mdr, forwarding_tr);
                 rg2r <= rd2;
                 if (~en_f)
@@ -167,7 +167,6 @@ module top_module(input         CLK,
             end
             if (en_x) begin
                 ir3 <= ir2;
-                sr2 <= sr1;
                 dr1 <= alu_dr;
                 if (alu_flag_up) begin
                     sf <= alu_sf;
